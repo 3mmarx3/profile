@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>phone</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/js/bootstrap.bundle.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.3/dist/tailwind.min.css" rel="stylesheet">
+
+    <link rel="stylesheet" href="./css/style.css">
+
+
+</head>
+
+<body>
+
+    <main>
+        <div class="flex justify-between mt-3">
+            <div class="yellow-text text-lg">
+                <div class=""> Orix </div>
+                <div class="font-bold"> Bill Splitter </div>
+            </div>
+            <div class="w-16 h-16 relative">
+                <div class="absolute inset-0 bg-[#342f52] overflow-hidden"
+                    style="border: 2px solid rgb(84, 78, 117); border-radius: 15px;">
+                    <div class="bg-[#48426c] text-center absolute inset-x-0 bottom-0 text-xs font-bold py-1">Sajon</div>
+                </div><img src="https://assets.codepen.io/3685267/bill-splitter-app-8.png" class="w-14 h-14 absolute"
+                    style="left: 50%; top: -19px; transform: translate(-50%, 0px);">
+            </div>
+        </div>
+
+        <div class="bg-[#edc08c]  custom-border mt-6 flex p-6 shadow-md">
+            <div class="grow">
+                <div class="text-[#48426d] font-semibold text-sm"> Total Bill </div>
+                <div class="text-[#48426d] font-bold text-xl mt-1"> $750.86 </div><button
+                    class="bg-[#48426d] yellow-text font-bold py-4 px-4 mt-3 text-sm custom-border ">Split Now</button>
+            </div>
+            <div class="shrink-0 inline-flex flex-col items-center">
+                <div class="text-[#48426d] font-bold text-sm"> Split With </div>
+                <div class="w-14 h-14 mt-2 relative">
+                    <div class="absolute inset-x-0 top-0 bg-white flex justify-center rounded-lg shadow-lg">
+                        <div class="w-9 pt-5 pb-2">
+                            <div class="w-9 h-9 rounded-full overflow-hidden bg-contain"
+                                style="background-image: url(&quot;https://assets.codepen.io/3685267/bill-splitter-app-1.png&quot;); margin-top: -6px; padding: 2px; border: 2px solid rgb(255, 255, 255);">
+                            </div>
+                            <div class="w-9 h-9 rounded-full overflow-hidden bg-contain"
+                                style="background-image: url(&quot;https://assets.codepen.io/3685267/bill-splitter-app-2.png&quot;); margin-top: -6px; padding: 2px; border: 2px solid rgb(255, 255, 255);">
+                            </div>
+                            <div class="w-9 h-9 rounded-full overflow-hidden bg-contain"
+                                style="background-image: url(&quot;https://assets.codepen.io/3685267/bill-splitter-app-3.png&quot;); margin-top: -6px; padding: 2px; border: 2px solid rgb(255, 255, 255);">
+                            </div>
+                            <div class="w-9 h-9 rounded-full overflow-hidden grid place-items-center"
+                                style="background: rgb(241, 170, 155); margin-top: -6px; padding: 2px; border: 2px solid rgb(255, 255, 255);">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="3"
+                                    stroke="currentColor" class="size-4">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15">
+                                    </path>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-[#373258] h-16 mt-6 custom-border flex items-center shadow-md">
+            <div class="h-16 w-16 grid place-items-center">
+                <div class="h-11 w-11 rounded-full bg-[#48426d] grid place-items-center yellow-text blue-shadow"><svg
+                        xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                        stroke="currentColor" class="size-6">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z"></path>
+                    </svg></div>
+            </div>
+            <div class="ml-1">
+                <div class="text-sm font-semibold yellow-text">Your previous split</div>
+                <div class="text-xs mt-1"> $678.56 </div>
+            </div>
+        </div>
+        <div class=" mt-6 rounded-3xl relative"><svg width="264" height="224" viewBox="0 0 264 224" fill="none"
+                xmlns="http://www.w3.org/2000/svg">
+                <path
+                    d="M0 84V206C0 216.493 8.50659 225 19 225H245C255.493 225 264 216.493 264 206V19C264 8.50659 255.493 0 245 0H83.1214C72.628 0 64.1214 8.50659 64.1214 19V46C64.1214 56.4934 55.6149 65 45.1214 65H19C8.50659 65 0 73.5066 0 84Z"
+                    fill="#373258"></path>
+            </svg>
+            <div
+                class="w-14 h-14 bg-[#edc08c] absolute top-0 left-0 grid place-items-center text-[#48426d] custom-border ">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                    stroke="currentColor" class="w-6 h-6">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"></path>
+                </svg></div>
+            <div class="absolute inset-0 p-4">
+                <div class="" style="padding-left: 64px;">
+                    <div class="flex items-center justify-between text-xs pb-2">
+                        <div class="yellow-text"> Nearby Friends </div>
+                        <div class=""> See all </div>
+                    </div>
+                    <div class="flex  justify-between ">
+                        <div class="w-12 bg-[#48426d] rounded-full pb-2.5 relative">
+                            <div class="w-12 h-11 grid place-items-center">
+                                <div class="w-8 h-8 rounded-full bg-contain"
+                                    style="background-image: url(&quot;https://assets.codepen.io/3685267/bill-splitter-app-6.png&quot;); padding: 2px; border: 2px solid rgb(255, 255, 255);">
+                                </div>
+                            </div>
+                            <div class="text-center mt-1 font-semibold" style="font-size: 10px;">Anna</div>
+                            <div class="absolute w-4 h-4 bg-[#cea87d] rounded-full grid place-items-center"
+                                style="left: 50%; bottom: -12px; transform: translate(-50%, 0px);"><svg
+                                    xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="5"
+                                    stroke="currentColor" class="w-2 h-2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15">
+                                    </path>
+                                </svg></div>
+                        </div>
+                        <div class="w-12 bg-[#48426d] rounded-full pb-2.5 relative">
+                            <div class="w-12 h-11 grid place-items-center">
+                                <div class="w-8 h-8 rounded-full bg-contain"
+                                    style="background-image: url(&quot;https://assets.codepen.io/3685267/bill-splitter-app-7.png&quot;); padding: 2px; border: 2px solid rgb(255, 255, 255);">
+                                </div>
+                            </div>
+                            <div class="text-center mt-1 font-semibold" style="font-size: 10px;">Khalifa</div>
+                            <div class="absolute w-4 h-4 bg-[#cea87d] rounded-full grid place-items-center"
+                                style="left: 50%; bottom: -12px; transform: translate(-50%, 0px);"><svg
+                                    xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="5"
+                                    stroke="currentColor" class="w-2 h-2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15">
+                                    </path>
+                                </svg></div>
+                        </div>
+                        <div class="w-12 bg-[#48426d] rounded-full pb-2.5 relative">
+                            <div class="w-12 h-11 grid place-items-center">
+                                <div class="w-8 h-8 rounded-full bg-contain"
+                                    style="background-image: url(&quot;https://assets.codepen.io/3685267/bill-splitter-app-9.png&quot;); padding: 2px; border: 2px solid rgb(255, 255, 255);">
+                                </div>
+                            </div>
+                            <div class="text-center mt-1 font-semibold" style="font-size: 10px;">Lisa</div>
+                            <div class="absolute w-4 h-4 bg-[#cea87d] rounded-full grid place-items-center"
+                                style="left: 50%; bottom: -12px; transform: translate(-50%, 0px);"><svg
+                                    xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="5"
+                                    stroke="currentColor" class="w-2 h-2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15">
+                                    </path>
+                                </svg></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="text-xs mt-4 mb-2 yellow-text"> Recently Split </div>
+                <div class="flex  justify-between ">
+                    <div class="w-10">
+                        <div class="w-10 h-10 rounded-full bg-contain"
+                            style="background-image: url(&quot;https://assets.codepen.io/3685267/bill-splitter-app-7.png&quot;); padding: 2px; border: 2px solid rgb(255, 255, 255);">
+                        </div>
+                        <div class="text-xs text-center mt-1"> Sing </div>
+                    </div>
+                    <div class="w-10">
+                        <div class="w-10 h-10 rounded-full bg-contain"
+                            style="background-image: url(&quot;https://assets.codepen.io/3685267/bill-splitter-app-3.png&quot;); padding: 2px; border: 2px solid rgb(255, 255, 255);">
+                        </div>
+                        <div class="text-xs text-center mt-1"> Alex </div>
+                    </div>
+                    <div class="w-10">
+                        <div class="w-10 h-10 rounded-full bg-contain"
+                            style="background-image: url(&quot;https://assets.codepen.io/3685267/bill-splitter-app-4.png&quot;); padding: 2px; border: 2px solid rgb(255, 255, 255);">
+                        </div>
+                        <div class="text-xs text-center mt-1"> Bryan </div>
+                    </div>
+                    <div class="w-10">
+                        <div class="w-10 h-10 rounded-full bg-contain"
+                            style="background-image: url(&quot;https://assets.codepen.io/3685267/bill-splitter-app-2.png&quot;); padding: 2px; border: 2px solid rgb(255, 255, 255);">
+                        </div>
+                        <div class="text-xs text-center mt-1"> Mike </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+
+
+
+
+
+    <script src="./script/app.js"></script>
+</body>
+
+</html>
