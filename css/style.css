@@ -1036,3 +1036,7 @@ video {
 .mb-6 {
   margin-bottom: 2.5rem;
 }
+
+audio {
+  display: none !important;
+}
