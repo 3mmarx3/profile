@@ -1032,3 +1032,7 @@ video {
   -ms-border-radius: 5px !important;
   -o-border-radius: 5px !important;
 }
+
+.mb-6 {
+  margin-bottom: 2.5rem;
+}
