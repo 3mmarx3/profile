@@ -62,3 +62,13 @@ function toggleAudio(audioId, playIconId, pauseIconId) {
     audioIcon.classList.remove("playing");
   }
 }
+
+// loding
+
+let loding = document.getElementById("loding");
+let lood = document.getElementById("lood");
+window.onload = function () {
+  loding.style.display = "block";
+
+  lood.style.display = "none";
+};
