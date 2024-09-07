@@ -654,10 +654,6 @@ video {
   width: 50%;
 }
 
-.w-10 {
-  width: 2.5rem;
-}
-
 .w-11 {
   width: 2.75rem;
 }
@@ -882,10 +878,6 @@ video {
   padding-bottom: 0.5rem;
 }
 
-.pb-2\.5 {
-  padding-bottom: 0.625rem;
-}
-
 .pl-3 {
   padding-left: 0.75rem;
 }
@@ -1045,4 +1037,11 @@ audio {
 .w-8.h-8.rounded-full.bg-contain {
   background-position: center center;
   background-size: contain;
+  background-repeat: no-repeat;
+}
+
+.w-8.h-8.rounded-full.bg-contain,
+.w-10.h-10.rounded-full.bg-contain {
+  width: 50px;
+  height: 50px;
 }
