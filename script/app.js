@@ -64,11 +64,9 @@ function toggleAudio(audioId, playIconId, pauseIconId) {
 }
 
 // loding
-
 let loding = document.getElementById("loding");
 let lood = document.getElementById("lood");
 window.onload = function () {
   loding.style.display = "block";
-
   lood.style.display = "none";
 };
