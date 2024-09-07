@@ -1040,3 +1040,9 @@ video {
 audio {
   display: none !important;
 }
+
+.w-10.h-10.rounded-full.bg-contain,
+.w-8.h-8.rounded-full.bg-contain {
+  background-position: center center;
+  background-size: contain;
+}
