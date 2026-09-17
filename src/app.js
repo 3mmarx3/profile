@@ -22,7 +22,7 @@ const mockProfiles = [
     connected_count: 0,
     avatar_url:
       "https://eng-amar.com/info/uploads/profiles/1726053350_IMG_9776.png",
-    bg_color: "#C8F331",
+    bg_color: "#101112",
     is_direct: true,
   },
   {
@@ -33,7 +33,7 @@ const mockProfiles = [
     connected_count: 0,
     avatar_url:
       "https://eng-amar.com/info/uploads/profiles/1726053350_IMG_9776.png",
-    bg_color: "#101112",
+    bg_color: "#C8F331",
     is_direct: true,
   },
 ];
@@ -134,6 +134,7 @@ const Index = () => {
         transform: `translateX(${dragOffset}px) translateY(0) rotate(${rotate}deg) scale(1)`,
         zIndex: 30,
         opacity: 1,
+        boxShadow: "0 10px 40px -10px rgba(0,0,0,0.08)",
         transition: isDragging
           ? "none"
           : "all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1)",
@@ -141,7 +142,7 @@ const Index = () => {
     }
     if (pos === 1) {
       return {
-        transform: "translateY(12px) rotate(3deg) scale(0.98)",
+        transform: "translateY(16px) rotate(-3deg) scale(0.96)",
         zIndex: 20,
         opacity: 1,
         transition: "all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1)",
@@ -149,7 +150,7 @@ const Index = () => {
     }
     if (pos === 2) {
       return {
-        transform: "translateY(22px) rotate(-2deg) scale(0.95)",
+        transform: "translateY(32px) rotate(3deg) scale(0.92)",
         zIndex: 10,
         opacity: 1,
         transition: "all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1)",
@@ -165,14 +166,14 @@ const Index = () => {
     >
       {/* Scrollable Area */}
       <div
-        className="px-4 sm:px-5 pt-4 sm:pt-5 pb-[110px] flex-1 flex flex-col gap-4 overflow-y-auto"
+        className="px-4 sm:px-5 pt-4 sm:pt-5 pb-[110px] flex-1 flex flex-col gap-6 overflow-y-auto"
         style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
       >
         <Header />
 
         {/* Responsive Profile Stack */}
         <div
-          className="relative w-full aspect-[4/3] min-h-[250px] max-h-[320px] shrink-0 cursor-grab active:cursor-grabbing select-none touch-none"
+          className="relative w-full h-[280px] sm:h-[300px] shrink-0 cursor-grab active:cursor-grabbing select-none touch-none mb-4"
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
@@ -190,71 +191,73 @@ const Index = () => {
               ? "border-gray-800"
               : isNeon
                 ? "border-[#b8e321]"
-                : "border-gray-200";
+                : "border-gray-100";
 
             return (
               <div
                 key={p.id}
-                className={`absolute top-0 left-0 w-full h-full rounded-[32px] p-5 border ${borderClass} flex flex-col items-center justify-between`}
+                className={`absolute top-0 left-0 w-full h-full rounded-[36px] p-6 sm:p-7 border ${borderClass} flex flex-col items-center justify-between bg-white`}
                 style={{ backgroundColor: p.bg_color, ...getCardStyle(index) }}
               >
                 <div className="flex justify-between w-full items-start pointer-events-none">
-                  <div className="text-left leading-tight mt-1 flex-1">
+                  <div className="flex flex-col text-left flex-1">
                     <span
-                      className={`font-semibold ${textColor} text-[13px] sm:text-[14px] block`}
+                      className={`font-bold ${textColor} text-[15px] sm:text-[16px]`}
                     >
                       {p.role_type}
                     </span>
-                    <span className={`${subColor} text-[12px] sm:text-[13px]`}>
+                    <span
+                      className={`${subColor} text-[13px] sm:text-[14px] mt-0.5`}
+                    >
                       profile
                     </span>
                   </div>
                   <div
-                    className="w-[64px] h-[64px] sm:w-[70px] sm:h-[70px] rounded-full flex-shrink-0 mx-2 bg-cover bg-center border-[2px] border-white"
+                    className="w-[60px] h-[60px] sm:w-[65px] sm:h-[65px] rounded-full flex-shrink-0 mx-2 bg-cover bg-center border-[3px] border-white z-10"
                     style={{ backgroundImage: `url(${p.avatar_url})` }}
                   ></div>
-                  <div className="text-right leading-tight mt-1 flex-1">
+                  <div className="flex flex-col text-right flex-1">
                     <span
-                      className={`font-bold ${textColor} text-[20px] sm:text-[22px] block`}
+                      className={`font-bold ${textColor} text-[24px] sm:text-[26px] leading-none`}
                     >
                       {p.connected_count}
                     </span>
                     <span
-                      className={`${subColor} text-[11px] sm:text-[12px] font-medium`}
+                      className={`${subColor} text-[13px] sm:text-[14px] mt-1`}
                     >
                       Connected
                     </span>
                   </div>
                 </div>
 
-                <div className="text-center pointer-events-none my-2">
+                <div className="text-center pointer-events-none flex-1 flex flex-col justify-center">
                   <h2
-                    className={`text-[18px] sm:text-[20px] font-bold ${textColor} tracking-tight`}
+                    className={`text-[22px] sm:text-[24px] font-bold ${textColor} tracking-tight`}
                   >
                     {p.full_name}
                   </h2>
                   <p
-                    className={`text-[11px] sm:text-[12px] ${subColor} mt-0.5 font-medium`}
+                    className={`text-[13px] sm:text-[14px] ${subColor} mt-1.5`}
                   >
                     {p.bio}
                   </p>
                 </div>
 
                 <div
-                  className={`w-full border-t ${isDark ? "border-gray-800" : "border-gray-200"} pt-3 flex items-center justify-between pointer-events-none`}
+                  className={`w-full border-t ${isDark ? "border-gray-800" : "border-gray-100"} pt-4 flex items-center justify-between pointer-events-none`}
                 >
                   <span
-                    className={`text-[12px] sm:text-[13px] font-medium ${subColor}`}
+                    className={`text-[14px] sm:text-[15px] font-medium ${textColor}`}
                   >
                     Your Links
                   </span>
                   <div className="flex items-center gap-2">
                     <svg
-                      width="15"
-                      height="15"
+                      width="16"
+                      height="16"
                       viewBox="0 0 24 24"
                       fill="none"
-                      stroke={isDark ? "white" : "#101112"}
+                      stroke={textColor}
                       strokeWidth="2"
                       strokeLinecap="round"
                       strokeLinejoin="round"
@@ -264,16 +267,22 @@ const Index = () => {
                       <line x1="12" y1="8" x2="12.01" y2="8"></line>
                     </svg>
                     <span
-                      className={`text-[12px] sm:text-[13px] ${textColor} font-semibold mr-1`}
+                      className={`text-[14px] sm:text-[15px] ${textColor} font-bold mr-1`}
                     >
                       Direct
                     </span>
 
                     <div className="relative inline-flex items-center">
                       <div
-                        className={`w-11 h-6 rounded-full flex items-center px-1 transition-colors ${isDark ? "bg-[#C8F331]" : "bg-[#101112]"}`}
+                        className={`w-12 h-7 rounded-full flex items-center px-1 transition-colors ${
+                          isDark ? "bg-[#C8F331]" : "bg-[#101112]"
+                        }`}
                       >
-                        <div className="w-4 h-4 bg-white rounded-full transform translate-x-5 transition-transform"></div>
+                        <div
+                          className={`w-5 h-5 rounded-full transform translate-x-5 transition-transform ${
+                            isDark ? "bg-[#101112]" : "bg-white"
+                          }`}
+                        ></div>
                       </div>
                     </div>
                   </div>
@@ -284,23 +293,23 @@ const Index = () => {
         </div>
 
         {/* Search Section */}
-        <div className="relative flex justify-between items-center z-10 shrink-0 px-1 mt-1">
+        <div className="relative flex justify-between items-center z-10 shrink-0 px-2">
           <div className="flex-1 mr-4">
-            <h3 className="text-[16px] sm:text-[17px] font-medium text-[#101112]">
+            <h3 className="text-[18px] sm:text-[19px] font-medium text-[#101112] mb-0.5">
               Search
             </h3>
-            <p className="text-[11px] sm:text-[12px] text-[#9A9EA6] mt-0.5 font-normal leading-[1.3] truncate">
+            <p className="text-[13px] sm:text-[14px] text-[#9A9EA6] font-normal truncate">
               Find new friends and explore profiles
             </p>
           </div>
-          <button className="w-[44px] h-[44px] sm:w-[48px] sm:h-[48px] flex-shrink-0 rounded-full bg-white flex items-center justify-center text-[#101112] cursor-pointer hover:scale-105 transition-transform border border-gray-100">
+          <button className="w-[44px] h-[44px] sm:w-[48px] sm:h-[48px] flex-shrink-0 rounded-full bg-white flex items-center justify-center text-[#101112] cursor-pointer hover:scale-105 transition-transform shadow-sm border border-gray-100">
             <svg
-              width="18"
-              height="18"
+              width="22"
+              height="22"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
-              strokeWidth="1.5"
+              strokeWidth="2"
               strokeLinecap="round"
               strokeLinejoin="round"
             >
@@ -311,50 +320,53 @@ const Index = () => {
         </div>
 
         {/* Bottom Bento Grid */}
-        <div className="grid grid-cols-2 gap-3 items-stretch shrink-0 flex-1 min-h-[180px]">
+        <div className="grid grid-cols-2 gap-3 items-stretch shrink-0 flex-1 min-h-[190px]">
           {/* Left Column */}
           <div className="flex flex-col gap-3 h-full">
             <div
               onClick={() => setIsSocialModalOpen(true)}
-              className="bg-white rounded-[24px] p-4 flex-1 flex flex-col justify-center cursor-pointer hover:scale-95 transition-transform border border-gray-100"
+              className="bg-white rounded-[28px] p-5 flex-1 flex flex-col justify-center cursor-pointer hover:scale-[0.98] transition-transform shadow-sm border border-gray-100"
             >
-              <div className="flex -space-x-2 overflow-hidden py-1">
+              <div className="flex -space-x-3 overflow-hidden py-1 mb-3">
                 {mockSocials.map((soc) => (
                   <div
                     key={soc.id}
-                    className="w-[28px] h-[28px] sm:w-[30px] sm:h-[30px] rounded-full ring-[2px] ring-white flex items-center justify-center text-white relative"
+                    className="w-[34px] h-[34px] sm:w-[36px] sm:h-[36px] rounded-full ring-[2.5px] ring-white flex items-center justify-center text-white relative"
                     style={{ backgroundColor: soc.bg_color }}
                   >
-                    <i className={`${soc.icon_class} text-[12px]`}></i>
+                    <i className={`${soc.icon_class} text-[14px]`}></i>
                   </div>
                 ))}
+                <div className="w-[34px] h-[34px] sm:w-[36px] sm:h-[36px] rounded-full ring-[2.5px] ring-white bg-[#f4f5f7] flex items-center justify-center text-[#101112] font-semibold text-[12px] relative">
+                  4
+                </div>
               </div>
-              <div className="mt-2">
-                <p className="text-[26px] sm:text-[30px] font-semibold text-[#101112] leading-none tracking-tight">
+              <div>
+                <p className="text-[32px] sm:text-[36px] font-bold text-[#101112] leading-none tracking-tight">
                   08
                 </p>
-                <p className="text-[11px] sm:text-[12px] text-[#9A9EA6] font-normal mt-1.5">
+                <p className="text-[13px] text-[#9A9EA6] font-normal mt-1.5">
                   Active social links
                 </p>
               </div>
             </div>
 
-            <button className="bg-[#C8F331] rounded-[20px] h-[48px] sm:h-[52px] w-full flex items-center justify-center gap-2 font-medium text-[13px] sm:text-[14px] text-[#101112]">
+            <button className="bg-[#C8F331] rounded-[24px] h-[54px] sm:h-[60px] w-full flex items-center justify-center gap-2 font-medium text-[15px] text-[#101112] hover:bg-[#b8e321] transition-colors">
               <i className="fa-solid fa-user-pen"></i>
               <span>Edit Profile</span>
             </button>
           </div>
 
           {/* Right Column */}
-          <div className="bg-white rounded-[24px] p-4 flex flex-col h-full border border-gray-100">
+          <div className="bg-white rounded-[28px] p-5 flex flex-col h-full shadow-sm border border-gray-100">
             <div className="flex items-center justify-between mb-2 shrink-0">
-              <h4 className="text-[12px] sm:text-[13px] font-semibold text-[#101112]">
+              <h4 className="text-[15px] font-semibold text-[#101112]">
                 Recent connected
               </h4>
             </div>
             <div className="flex-1 flex flex-col items-center justify-center text-center opacity-60">
-              <i className="fa-solid fa-users-slash text-[20px] sm:text-[22px] text-[#9A9EA6] mb-2"></i>
-              <p className="text-[10px] sm:text-[11px] text-[#9A9EA6] font-normal">
+              <i className="fa-solid fa-users-slash text-[28px] text-[#9A9EA6] mb-3"></i>
+              <p className="text-[13px] text-[#9A9EA6] font-normal">
                 No profiles yet
               </p>
             </div>
