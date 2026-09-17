@@ -1,6 +1,18 @@
 import React from "react";
+import Skeleton from "react-loading-skeleton";
+import "react-loading-skeleton/dist/skeleton.css";
 
-const Header = () => {
+const Header = ({ loading = false }) => {
+  if (loading) {
+    return (
+      <div className="flex items-center justify-between shrink-0 pt-1">
+        <Skeleton circle width={46} height={46} />
+        <Skeleton width={60} height={20} borderRadius={6} />
+        <Skeleton circle width={46} height={46} />
+      </div>
+    );
+  }
+
   return (
     <div className="flex items-center justify-between shrink-0 pt-1">
       <button className="w-[46px] h-[46px] rounded-full bg-white flex items-center justify-center text-[#101112] hover:scale-105 transition-transform">
