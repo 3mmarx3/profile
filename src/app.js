@@ -1,6 +1,8 @@
 import React, { useState, useRef } from "react";
 import Header from "./Header";
 import Nav from "./Nav";
+import Skeleton from "react-loading-skeleton";
+import "react-loading-skeleton/dist/skeleton.css";
 
 const mockProfiles = [
   {
@@ -69,10 +71,13 @@ const Index = () => {
   const [animatingCard, setAnimatingCard] = useState(null);
   const [isSocialModalOpen, setIsSocialModalOpen] = useState(false);
 
+  // حالة التحميل (يمكنك جعلها true إذا كنت تنتظر بيانات من API)
+  const [isLoading, setIsLoading] = useState(false);
+
   const touchStartRef = useRef({ x: 0, y: 0 });
 
   const handleTouchStart = (e) => {
-    if (animatingCard) return;
+    if (animatingCard || isLoading) return;
     touchStartRef.current = {
       x: e.touches[0].clientX,
       y: e.touches[0].clientY,
@@ -81,14 +86,14 @@ const Index = () => {
   };
 
   const handleTouchMove = (e) => {
-    if (!isDragging || animatingCard) return;
+    if (!isDragging || animatingCard || isLoading) return;
     const currentX = e.touches[0].clientX;
     const diffX = currentX - touchStartRef.current.x;
     setDragOffset(diffX);
   };
 
   const handleTouchEnd = () => {
-    if (!isDragging || animatingCard) return;
+    if (!isDragging || animatingCard || isLoading) return;
     setIsDragging(false);
 
     if (dragOffset > 80) {
@@ -134,7 +139,6 @@ const Index = () => {
         transform: `translateX(${dragOffset}px) translateY(0) rotate(${rotate}deg) scale(1)`,
         zIndex: 30,
         opacity: 1,
-        boxShadow: "0 10px 40px -10px rgba(0,0,0,0.08)",
         transition: isDragging
           ? "none"
           : "all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1)",
@@ -164,136 +168,178 @@ const Index = () => {
       className="app-container w-full max-w-md mx-auto relative h-[100dvh] flex flex-col overflow-hidden bg-[#f4f5f7]"
       style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
     >
-      {/* Scrollable Area */}
-      <div
-        className="px-4 sm:px-5 pt-4 sm:pt-5 pb-[110px] flex-1 flex flex-col gap-6 overflow-y-auto"
-        style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
-      >
+      <div className="px-4 sm:px-5 pt-4 sm:pt-5 pb-[100px] flex-1 flex flex-col gap-4 overflow-hidden">
         <Header />
 
-        {/* Responsive Profile Stack */}
         <div
-          className="relative w-full h-[280px] sm:h-[300px] shrink-0 cursor-grab active:cursor-grabbing select-none touch-none mb-4"
+          className="relative w-full flex-none h-[255px] sm:h-[275px] cursor-grab active:cursor-grabbing select-none touch-none"
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
         >
-          {mockProfiles.map((p, index) => {
-            const isDark = p.bg_color === "#101112";
-            const isNeon = p.bg_color === "#C8F331";
-            const textColor = isDark ? "text-white" : "text-[#101112]";
-            const subColor = isDark
-              ? "text-gray-400"
-              : isNeon
-                ? "text-[#101112]/70"
-                : "text-[#9A9EA6]";
-            const borderClass = isDark
-              ? "border-gray-800"
-              : isNeon
-                ? "border-[#b8e321]"
-                : "border-gray-100";
-
-            return (
-              <div
-                key={p.id}
-                className={`absolute top-0 left-0 w-full h-full rounded-[36px] p-6 sm:p-7 border ${borderClass} flex flex-col items-center justify-between bg-white`}
-                style={{ backgroundColor: p.bg_color, ...getCardStyle(index) }}
-              >
-                <div className="flex justify-between w-full items-start pointer-events-none">
-                  <div className="flex flex-col text-left flex-1">
-                    <span
-                      className={`font-bold ${textColor} text-[15px] sm:text-[16px]`}
-                    >
-                      {p.role_type}
-                    </span>
-                    <span
-                      className={`${subColor} text-[13px] sm:text-[14px] mt-0.5`}
-                    >
-                      profile
-                    </span>
-                  </div>
-                  <div
-                    className="w-[60px] h-[60px] sm:w-[65px] sm:h-[65px] rounded-full flex-shrink-0 mx-2 bg-cover bg-center border-[3px] border-white z-10"
-                    style={{ backgroundImage: `url(${p.avatar_url})` }}
-                  ></div>
-                  <div className="flex flex-col text-right flex-1">
-                    <span
-                      className={`font-bold ${textColor} text-[24px] sm:text-[26px] leading-none`}
-                    >
-                      {p.connected_count}
-                    </span>
-                    <span
-                      className={`${subColor} text-[13px] sm:text-[14px] mt-1`}
-                    >
-                      Connected
-                    </span>
-                  </div>
+          {isLoading ? (
+            // شكل الـ Skeleton المطابق تماماً لتصميم الكارت بدون أي تغيير في الأبعاد
+            <div className="absolute top-0 left-0 w-full h-full rounded-[36px] p-5 sm:p-6 border border-gray-100 flex flex-col items-center justify-between bg-white">
+              <div className="flex justify-between w-full items-start pointer-events-none">
+                <div className="flex flex-col text-left flex-1">
+                  <Skeleton width={80} height={16} />
+                  <Skeleton
+                    width={50}
+                    height={14}
+                    style={{ marginTop: "4px" }}
+                  />
                 </div>
-
-                <div className="text-center pointer-events-none flex-1 flex flex-col justify-center">
-                  <h2
-                    className={`text-[22px] sm:text-[24px] font-bold ${textColor} tracking-tight`}
-                  >
-                    {p.full_name}
-                  </h2>
-                  <p
-                    className={`text-[13px] sm:text-[14px] ${subColor} mt-1.5`}
-                  >
-                    {p.bio}
-                  </p>
+                <div className="mx-2">
+                  <Skeleton circle width={75} height={75} />
                 </div>
+                <div className="flex flex-col text-right flex-1 items-end">
+                  <Skeleton width={30} height={24} />
+                  <Skeleton
+                    width={60}
+                    height={14}
+                    style={{ marginTop: "4px" }}
+                  />
+                </div>
+              </div>
 
+              <div className="text-center pointer-events-none flex-1 flex flex-col justify-center w-full">
+                <Skeleton
+                  width={140}
+                  height={24}
+                  style={{ margin: "0 auto" }}
+                />
+                <Skeleton
+                  width={180}
+                  height={14}
+                  style={{ margin: "6px auto 0 auto" }}
+                />
+              </div>
+
+              <div className="w-full border-t border-gray-100 pt-4 flex items-center justify-between pointer-events-none">
+                <Skeleton width={70} height={15} />
+                <Skeleton width={90} height={20} />
+              </div>
+            </div>
+          ) : (
+            mockProfiles.map((p, index) => {
+              const isDark = p.bg_color === "#101112";
+              const isNeon = p.bg_color === "#C8F331";
+              const textColor = isDark ? "text-white" : "text-[#101112]";
+              const subColor = isDark
+                ? "text-gray-400"
+                : isNeon
+                  ? "text-[#101112]/70"
+                  : "text-[#9A9EA6]";
+              const borderClass = isDark
+                ? "border-gray-800"
+                : isNeon
+                  ? "border-[#b8e321]"
+                  : "border-gray-100";
+
+              return (
                 <div
-                  className={`w-full border-t ${isDark ? "border-gray-800" : "border-gray-100"} pt-4 flex items-center justify-between pointer-events-none`}
+                  key={p.id}
+                  className={`absolute top-0 left-0 w-full h-full rounded-[36px] p-5 sm:p-6 border ${borderClass} flex flex-col items-center justify-between bg-white`}
+                  style={{
+                    backgroundColor: p.bg_color,
+                    ...getCardStyle(index),
+                  }}
                 >
-                  <span
-                    className={`text-[14px] sm:text-[15px] font-medium ${textColor}`}
-                  >
-                    Your Links
-                  </span>
-                  <div className="flex items-center gap-2">
-                    <svg
-                      width="16"
-                      height="16"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke={textColor}
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <circle cx="12" cy="12" r="10"></circle>
-                      <line x1="12" y1="16" x2="12" y2="12"></line>
-                      <line x1="12" y1="8" x2="12.01" y2="8"></line>
-                    </svg>
-                    <span
-                      className={`text-[14px] sm:text-[15px] ${textColor} font-bold mr-1`}
-                    >
-                      Direct
-                    </span>
-
-                    <div className="relative inline-flex items-center">
-                      <div
-                        className={`w-12 h-7 rounded-full flex items-center px-1 transition-colors ${
-                          isDark ? "bg-[#C8F331]" : "bg-[#101112]"
-                        }`}
+                  <div className="flex justify-between w-full items-start pointer-events-none">
+                    <div className="flex flex-col text-left flex-1">
+                      <span
+                        className={`font-bold ${textColor} text-[15px] sm:text-[16px]`}
                       >
+                        {p.role_type}
+                      </span>
+                      <span
+                        className={`${subColor} text-[13px] sm:text-[14px] mt-0.5`}
+                      >
+                        profile
+                      </span>
+                    </div>
+                    <div
+                      className="w-[70px] h-[70px] sm:w-[75px] sm:h-[75px] rounded-full flex-shrink-0 mx-2 bg-cover bg-center border-[3px] border-white z-10"
+                      style={{ backgroundImage: `url(${p.avatar_url})` }}
+                    ></div>
+                    <div className="flex flex-col text-right flex-1">
+                      <span
+                        className={`font-bold ${textColor} text-[24px] sm:text-[26px] leading-none`}
+                      >
+                        {p.connected_count}
+                      </span>
+                      <span
+                        className={`${subColor} text-[13px] sm:text-[14px] mt-1`}
+                      >
+                        Connected
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="text-center pointer-events-none flex-1 flex flex-col justify-center">
+                    <h2
+                      className={`text-[22px] sm:text-[24px] font-bold ${textColor} tracking-tight`}
+                    >
+                      {p.full_name}
+                    </h2>
+                    <p
+                      className={`text-[13px] sm:text-[14px] ${subColor} mt-1.5`}
+                    >
+                      {p.bio}
+                    </p>
+                  </div>
+
+                  <div
+                    className={`w-full border-t ${isDark ? "border-gray-800" : "border-gray-100"} pt-4 flex items-center justify-between pointer-events-none`}
+                  >
+                    <span
+                      className={`text-[14px] sm:text-[15px] font-medium ${textColor}`}
+                    >
+                      Your Links
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke={textColor}
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="16" x2="12" y2="12"></line>
+                        <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                      </svg>
+                      <span
+                        className={`text-[14px] sm:text-[15px] ${textColor} font-bold mr-1`}
+                      >
+                        Direct
+                      </span>
+
+                      <div className="relative inline-flex items-center">
                         <div
-                          className={`w-5 h-5 rounded-full transform translate-x-5 transition-transform ${
-                            isDark ? "bg-[#101112]" : "bg-white"
+                          className={`w-12 h-7 rounded-full flex items-center px-1 transition-colors ${
+                            isDark ? "bg-[#C8F331]" : "bg-[#101112]"
                           }`}
-                        ></div>
+                        >
+                          <div
+                            className={`w-5 h-5 rounded-full transform translate-x-5 transition-transform ${
+                              isDark ? "bg-[#101112]" : "bg-white"
+                            }`}
+                          ></div>
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })
+          )}
         </div>
 
-        {/* Search Section */}
-        <div className="relative flex justify-between items-center z-10 shrink-0 px-2">
+        <div className="relative flex justify-between items-center z-10 shrink-0 px-2 mt-5">
           <div className="flex-1 mr-4">
             <h3 className="text-[18px] sm:text-[19px] font-medium text-[#101112] mb-0.5">
               Search
@@ -302,7 +348,7 @@ const Index = () => {
               Find new friends and explore profiles
             </p>
           </div>
-          <button className="w-[44px] h-[44px] sm:w-[48px] sm:h-[48px] flex-shrink-0 rounded-full bg-white flex items-center justify-center text-[#101112] cursor-pointer hover:scale-105 transition-transform shadow-sm border border-gray-100">
+          <button className="w-[44px] h-[44px] sm:w-[48px] sm:h-[48px] flex-shrink-0 rounded-full bg-white flex items-center justify-center text-[#101112] cursor-pointer hover:scale-105 transition-transform border border-gray-100">
             <svg
               width="22"
               height="22"
@@ -319,54 +365,51 @@ const Index = () => {
           </button>
         </div>
 
-        {/* Bottom Bento Grid */}
-        <div className="grid grid-cols-2 gap-3 items-stretch shrink-0 flex-1 min-h-[190px]">
-          {/* Left Column */}
+        <div className="grid grid-cols-2 gap-3 items-stretch shrink-0 flex-1 min-h-[150px]">
           <div className="flex flex-col gap-3 h-full">
             <div
               onClick={() => setIsSocialModalOpen(true)}
-              className="bg-white rounded-[28px] p-5 flex-1 flex flex-col justify-center cursor-pointer hover:scale-[0.98] transition-transform shadow-sm border border-gray-100"
+              className="bg-white rounded-[28px] p-4 flex-1  cursor-pointer hover:scale-[0.98] transition-transform border border-gray-100"
             >
-              <div className="flex -space-x-3 overflow-hidden py-1 mb-3">
+              <div className="flex -space-x-3 overflow-hidden py-1 mb-2">
                 {mockSocials.map((soc) => (
                   <div
                     key={soc.id}
-                    className="w-[34px] h-[34px] sm:w-[36px] sm:h-[36px] rounded-full ring-[2.5px] ring-white flex items-center justify-center text-white relative"
+                    className="w-[30px] h-[30px] sm:w-[34px] sm:h-[34px] rounded-full ring-[2.5px] ring-white flex items-center justify-center text-white relative"
                     style={{ backgroundColor: soc.bg_color }}
                   >
-                    <i className={`${soc.icon_class} text-[14px]`}></i>
+                    <i className={`${soc.icon_class} text-[12px]`}></i>
                   </div>
                 ))}
-                <div className="w-[34px] h-[34px] sm:w-[36px] sm:h-[36px] rounded-full ring-[2.5px] ring-white bg-[#f4f5f7] flex items-center justify-center text-[#101112] font-semibold text-[12px] relative">
+                <div className="w-[30px] h-[30px] sm:w-[34px] sm:h-[34px] rounded-full ring-[2.5px] ring-white bg-[#f4f5f7] flex items-center justify-center text-[#101112] font-semibold text-[11px] relative">
                   4
                 </div>
               </div>
               <div>
-                <p className="text-[32px] sm:text-[36px] font-bold text-[#101112] leading-none tracking-tight">
+                <p className="text-[28px] sm:text-[32px] font-bold text-[#101112] leading-none tracking-tight">
                   08
                 </p>
-                <p className="text-[13px] text-[#9A9EA6] font-normal mt-1.5">
+                <p className="text-[12px] text-[#9A9EA6] font-normal mt-1">
                   Active social links
                 </p>
               </div>
             </div>
 
-            <button className="bg-[#C8F331] rounded-[24px] h-[54px] sm:h-[60px] w-full flex items-center justify-center gap-2 font-medium text-[15px] text-[#101112] hover:bg-[#b8e321] transition-colors">
+            <button className="bg-[#C8F331] rounded-[24px] h-[48px] sm:h-[54px] w-full flex items-center justify-center gap-2 font-medium text-[14px] text-[#101112] hover:bg-[#b8e321] transition-colors shrink-0">
               <i className="fa-solid fa-user-pen"></i>
               <span>Edit Profile</span>
             </button>
           </div>
 
-          {/* Right Column */}
-          <div className="bg-white rounded-[28px] p-5 flex flex-col h-full shadow-sm border border-gray-100">
+          <div className="bg-white rounded-[28px] p-4 flex flex-col h-full border border-gray-100">
             <div className="flex items-center justify-between mb-2 shrink-0">
-              <h4 className="text-[15px] font-semibold text-[#101112]">
+              <h4 className="text-[14px] font-semibold text-[#101112]">
                 Recent connected
               </h4>
             </div>
             <div className="flex-1 flex flex-col items-center justify-center text-center opacity-60">
-              <i className="fa-solid fa-users-slash text-[28px] text-[#9A9EA6] mb-3"></i>
-              <p className="text-[13px] text-[#9A9EA6] font-normal">
+              <i className="fa-solid fa-users-slash text-[24px] text-[#9A9EA6] mb-2"></i>
+              <p className="text-[12px] text-[#9A9EA6] font-normal">
                 No profiles yet
               </p>
             </div>
@@ -376,7 +419,6 @@ const Index = () => {
 
       <Nav activePage="home" />
 
-      {/* Social Modal */}
       {isSocialModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-5 bg-[#101112]/40 backdrop-blur-sm">
           <div className="relative w-full max-w-[360px]">

@@ -2,8 +2,8 @@ import React from "react";
 
 const Header = () => {
   return (
-    <div className="flex items-center justify-between shrink-0 mb-3 pt-1">
-      <button className="w-[46px] h-[46px] rounded-full bg-white flex items-center justify-center text-[#101112] shadow-sm hover:scale-105 transition-transform">
+    <div className="flex items-center justify-between shrink-0 pt-1">
+      <button className="w-[46px] h-[46px] rounded-full bg-white flex items-center justify-center text-[#101112] hover:scale-105 transition-transform">
         <svg
           width="22"
           height="22"
@@ -21,7 +21,7 @@ const Header = () => {
 
       <h1 className="text-[17px] font-semibold text-[#101112]">Home</h1>
 
-      <button className="w-[46px] h-[46px] rounded-full bg-white flex items-center justify-center text-[#101112] shadow-sm hover:scale-105 transition-transform">
+      <button className="w-[46px] h-[46px] rounded-full bg-white flex items-center justify-center text-[#101112] hover:scale-105 transition-transform">
         <svg
           width="20"
           height="20"
