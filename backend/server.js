@@ -9,7 +9,7 @@ app.use(express.json());
 
 const MONGO_URI =
   "mongodb+srv://ammar132804_db_user:AmmarDev2026@cluster0.tuu7egn.mongodb.net/profileDB?retryWrites=true&w=majority&appName=Cluster0";
-const SECRET_KEY = "Ammar_Super_Secret_Key_2026"; // ده مفتاح التشفير الخاص بيك
+const SECRET_KEY = "Ammar_Super_Secret_Key_2026";
 
 mongoose
   .connect(MONGO_URI)
@@ -41,13 +41,11 @@ const profileSchema = new mongoose.Schema({
 
 const Profile = mongoose.model("Profile", profileSchema);
 
-// 1. مسار تسجيل الدخول (السيرفر بيتأكد من البيانات ويبعت التوكن)
 app.post("/api/login", (req, res) => {
-  const { email, password } = req.body;
+  const email = req.body.email ? req.body.email.trim().toLowerCase() : "";
+  const password = req.body.password ? req.body.password.trim() : "";
 
-  // البيانات دي متأمنة جوه السيرفر ومحدش يقدر يشوفها في المتصفح
   if (email === "ammar@profile.com" && password === "AmmarDev2026") {
-    // لو صح، السيرفر بيعمل مفتاح (Token) صالح لمدة 24 ساعة
     const token = jwt.sign({ role: "admin" }, SECRET_KEY, { expiresIn: "24h" });
     res.json({ token });
   } else {
@@ -55,7 +53,6 @@ app.post("/api/login", (req, res) => {
   }
 });
 
-// 2. حارس الأمان (Middleware) بيتأكد إن الشخص معاه التوكن قبل ما يعدل
 const authenticateToken = (req, res, next) => {
   const authHeader = req.headers["authorization"];
   const token = authHeader && authHeader.split(" ")[1];
@@ -73,7 +70,6 @@ const authenticateToken = (req, res, next) => {
   });
 };
 
-// مسار جلب البيانات (مفتوح للكل عشان الموقع يشتغل)
 app.get("/api/profile", async (req, res) => {
   try {
     let profileData = await Profile.findOne();
@@ -98,7 +94,6 @@ app.get("/api/profile", async (req, res) => {
   }
 });
 
-// مسار حفظ البيانات (محمي بـ authenticateToken)
 app.post("/api/profile", authenticateToken, async (req, res) => {
   try {
     const {
