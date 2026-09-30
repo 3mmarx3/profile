@@ -1,29 +1,6 @@
 import React, { useState } from "react";
 import Skeleton from "react-loading-skeleton";
-
-const mockSocials = [
-  {
-    id: 1,
-    platform_name: "Facebook",
-    bg_color: "#1877F2",
-    icon_class: "fa-brands fa-facebook-f",
-    url: "#",
-  },
-  {
-    id: 2,
-    platform_name: "Instagram",
-    bg_color: "#E1306C",
-    icon_class: "fa-brands fa-instagram",
-    url: "#",
-  },
-  {
-    id: 3,
-    platform_name: "WhatsApp",
-    bg_color: "#25D366",
-    icon_class: "fa-brands fa-whatsapp",
-    url: "#",
-  },
-];
+import "react-loading-skeleton/dist/skeleton.css";
 
 function FollowButton() {
   const [isFollowing, setIsFollowing] = useState(false);
@@ -41,7 +18,38 @@ function FollowButton() {
   );
 }
 
-const ActiveSection = ({ loading, onOpenSocialModal }) => {
+const SocialIcon = ({ soc }) => {
+  const [imgError, setImgError] = useState(false);
+
+  return (
+    <div
+      className="w-[30px] h-[30px] sm:w-[34px] sm:h-[34px] rounded-full ring-[2.5px] ring-white flex items-center justify-center text-white relative overflow-hidden"
+      style={{ backgroundColor: soc.bg_color || "#101112" }}
+    >
+      {soc.image_url && !imgError ? (
+        <img
+          src={soc.image_url}
+          alt={soc.platform_name || "social"}
+          className="w-full h-full object-cover"
+          onError={() => setImgError(true)}
+        />
+      ) : (
+        <i className={`${soc.icon_class} text-[12px]`}></i>
+      )}
+    </div>
+  );
+};
+
+const ActiveSection = ({ loading, onOpenSocialModal, socialLinks = [] }) => {
+  const displayLinks = socialLinks.slice(0, 3);
+  const remainingLinks = socialLinks.length - 3;
+  const formattedTotal =
+    socialLinks.length < 10 && socialLinks.length > 0
+      ? `0${socialLinks.length}`
+      : socialLinks.length === 0
+        ? "00"
+        : socialLinks.length;
+
   if (loading) {
     return (
       <div className="grid grid-cols-2 gap-3 items-stretch shrink-0 flex-1 min-h-[150px]">
@@ -53,23 +61,19 @@ const ActiveSection = ({ loading, onOpenSocialModal }) => {
               <Skeleton circle width={34} height={34} />
               <Skeleton circle width={34} height={34} />
             </div>
-
             <Skeleton
               width={50}
               height={32}
               borderRadius={8}
               className="mb-1"
             />
-
             <Skeleton width={110} height={14} borderRadius={6} />
           </div>
-
           <Skeleton height={54} borderRadius={24} />
         </div>
 
         <div className="bg-white rounded-[28px] p-4 flex flex-col h-full border border-gray-100">
           <Skeleton width={120} height={18} borderRadius={6} className="mb-4" />
-
           <div className="flex-1 flex flex-col items-center justify-center gap-2">
             <Skeleton circle width={40} height={40} />
             <Skeleton width={90} height={14} borderRadius={6} />
@@ -87,24 +91,25 @@ const ActiveSection = ({ loading, onOpenSocialModal }) => {
           className="bg-white rounded-[28px] p-4 flex-1 cursor-pointer hover:scale-[0.98] transition-transform border border-gray-100"
         >
           <div className="flex -space-x-3 overflow-hidden py-1 mb-2">
-            {mockSocials.map((soc) => (
-              <div
-                key={soc.id}
-                className="w-[30px] h-[30px] sm:w-[34px] sm:h-[34px] rounded-full ring-[2.5px] ring-white flex items-center justify-center text-white relative"
-                style={{ backgroundColor: soc.bg_color }}
-              >
-                <i className={`${soc.icon_class} text-[12px]`}></i>
-              </div>
+            {displayLinks.map((soc, index) => (
+              <SocialIcon key={index} soc={soc} />
             ))}
 
-            <div className="w-[30px] h-[30px] sm:w-[34px] sm:h-[34px] rounded-full ring-[2.5px] ring-white bg-[#f4f5f7] flex items-center justify-center text-[#101112] font-semibold text-[11px] relative">
-              4
-            </div>
+            {remainingLinks > 0 && (
+              <div className="w-[30px] h-[30px] sm:w-[34px] sm:h-[34px] rounded-full ring-[2.5px] ring-white bg-[#f4f5f7] flex items-center justify-center text-[#101112] font-semibold text-[11px] relative">
+                +{remainingLinks}
+              </div>
+            )}
+            {socialLinks.length === 0 && (
+              <div className="w-[30px] h-[30px] sm:w-[34px] sm:h-[34px] rounded-full ring-[2.5px] ring-white bg-[#f4f5f7] flex items-center justify-center text-[#101112] font-semibold text-[11px] relative">
+                0
+              </div>
+            )}
           </div>
 
           <div>
             <p className="text-[28px] sm:text-[32px] font-bold text-[#101112] leading-none tracking-tight">
-              08
+              {formattedTotal}
             </p>
 
             <p className="text-[12px] text-[#9A9EA6] font-normal mt-1">

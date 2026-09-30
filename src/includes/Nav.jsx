@@ -3,7 +3,13 @@ import Skeleton from "react-loading-skeleton";
 import "react-loading-skeleton/dist/skeleton.css";
 import { motion, useMotionValue, useTransform, animate } from "framer-motion";
 
-const Nav = ({ loading = false, onPhoneSwipe, onWhatsAppSwipe }) => {
+const Nav = ({
+  loading = false,
+  onPhoneSwipe,
+  onWhatsAppSwipe,
+  phoneNumber = "",
+  whatsappNumber = "",
+}) => {
   const xPhone = useMotionValue(0);
   const isDraggingPhone = useMotionValue(0);
   const xWhatsApp = useMotionValue(0);
@@ -49,14 +55,10 @@ const Nav = ({ loading = false, onPhoneSwipe, onWhatsAppSwipe }) => {
   const handlePhoneDragEnd = (_event, info) => {
     isDraggingPhone.set(0);
     if (info.offset.x >= dragLimit * 0.4) {
-      window.location.href = "tel:+201070479599";
+      if (phoneNumber) window.location.href = `tel:${phoneNumber}`;
       onPhoneSwipe?.();
     }
-    animate(xPhone, 0, {
-      type: "spring",
-      stiffness: 420,
-      damping: 32,
-    });
+    animate(xPhone, 0, { type: "spring", stiffness: 420, damping: 32 });
   };
 
   const handleWhatsAppDragStart = () => {
@@ -65,14 +67,11 @@ const Nav = ({ loading = false, onPhoneSwipe, onWhatsAppSwipe }) => {
   const handleWhatsAppDragEnd = (_event, info) => {
     isDraggingWhatsApp.set(0);
     if (info.offset.x <= -dragLimit * 0.4) {
-      window.open("https://wa.me/201070479599", "_blank");
+      if (whatsappNumber)
+        window.open(`https://wa.me/${whatsappNumber}`, "_blank");
       onWhatsAppSwipe?.();
     }
-    animate(xWhatsApp, 0, {
-      type: "spring",
-      stiffness: 420,
-      damping: 32,
-    });
+    animate(xWhatsApp, 0, { type: "spring", stiffness: 420, damping: 32 });
   };
 
   if (loading) {
@@ -96,9 +95,7 @@ const Nav = ({ loading = false, onPhoneSwipe, onWhatsAppSwipe }) => {
     <div className="absolute bottom-5 left-5 right-5 z-50">
       <motion.div
         className="relative overflow-hidden rounded-full border border-white/50 bg-white/55 backdrop-blur-2xl"
-        style={{
-          backdropFilter: backdropFilter,
-        }}
+        style={{ backdropFilter: backdropFilter }}
       >
         <div className="absolute inset-0 bg-gradient-to-b from-white/45 via-white/10 to-transparent pointer-events-none" />
         <div className="absolute inset-0 bg-gradient-to-r from-white/25 via-transparent to-white/15 pointer-events-none" />

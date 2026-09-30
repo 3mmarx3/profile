@@ -2,46 +2,46 @@ import React, { useState, useRef } from "react";
 import Skeleton from "react-loading-skeleton";
 import ammarImg from "../assets/images/Ammar_Ahmed.PNG";
 
-const mockProfiles = [
-  {
-    id: 1,
-    full_name: "Ammar Ahmed",
-    role_type: "Developer",
-    bio: "Web Developer @ Sphinx | Computers",
-    connected_count: 0,
-    avatar_url: ammarImg,
-    bg_color: "white",
-    is_direct: true,
-  },
-  {
-    id: 2,
-    full_name: "Ammar Ahmed",
-    role_type: "Developer",
-    bio: "Web Developer @ Sphinx | Computers",
-    connected_count: 0,
-    avatar_url: ammarImg,
-    bg_color: "#101112",
-    is_direct: true,
-  },
-  {
-    id: 3,
-    full_name: "Ammar Ahmed",
-    role_type: "Developer",
-    bio: "Web Developer @ Sphinx | Computers",
-    connected_count: 0,
-    avatar_url: ammarImg,
-    bg_color: "#C8F331",
-    is_direct: true,
-  },
-];
-
-const ProfileCards = ({ loading }) => {
+const ProfileCards = ({ loading, profileData }) => {
   const [stackOrder, setStackOrder] = useState([0, 1, 2]);
   const [dragOffset, setDragOffset] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [animatingCard, setAnimatingCard] = useState(null);
 
   const touchStartRef = useRef({ x: 0, y: 0 });
+
+  const dynamicProfiles = [
+    {
+      id: 1,
+      full_name: profileData?.name || "Ammar Ahmed",
+      role_type: profileData?.role || "Developer",
+      bio: profileData?.bio || "Web Developer @ Sphinx | Computers",
+      connected_count: profileData?.connected_count || 0,
+      avatar_url: profileData?.avatar_url || ammarImg,
+      bg_color: "white",
+      is_direct: true,
+    },
+    {
+      id: 2,
+      full_name: profileData?.name || "Ammar Ahmed",
+      role_type: profileData?.role || "Developer",
+      bio: profileData?.bio || "Web Developer @ Sphinx | Computers",
+      connected_count: profileData?.connected_count || 0,
+      avatar_url: profileData?.avatar_url || ammarImg,
+      bg_color: "#101112",
+      is_direct: true,
+    },
+    {
+      id: 3,
+      full_name: profileData?.name || "Ammar Ahmed",
+      role_type: profileData?.role || "Developer",
+      bio: profileData?.bio || "Web Developer @ Sphinx | Computers",
+      connected_count: profileData?.connected_count || 0,
+      avatar_url: profileData?.avatar_url || ammarImg,
+      bg_color: "#C8F331",
+      is_direct: true,
+    },
+  ];
 
   const handleTouchStart = (e) => {
     if (animatingCard || loading) return;
@@ -174,7 +174,7 @@ const ProfileCards = ({ loading }) => {
     >
       {loading
         ? renderCardSkeleton()
-        : mockProfiles.map((p, index) => {
+        : dynamicProfiles.map((p, index) => {
             const isDark = p.bg_color === "#101112";
             const isNeon = p.bg_color === "#C8F331";
             const textColor = isDark ? "text-white" : "text-[#101112]";

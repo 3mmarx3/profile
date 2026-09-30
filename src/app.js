@@ -7,16 +7,22 @@ import ProfileCards from "./Component/ProfileCards";
 import ActiveSection from "./Component/ActiveSection";
 import SocialModal from "./Component/SocialModal";
 
-const Index = () => {
+const App = () => {
   const [loading, setLoading] = useState(true);
   const [isSocialModalOpen, setIsSocialModalOpen] = useState(false);
+  const [profileData, setProfileData] = useState(null);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setLoading(false);
-    }, 1500);
-
-    return () => clearTimeout(timer);
+    fetch("http://localhost:5001/api/profile")
+      .then((res) => res.json())
+      .then((data) => {
+        setProfileData(data);
+        setLoading(false);
+      })
+      .catch((error) => {
+        console.error("Error fetching data:", error);
+        setLoading(false);
+      });
   }, []);
 
   return (
@@ -28,9 +34,13 @@ const Index = () => {
         className="px-4 sm:px-5 pt-4 sm:pt-5 pb-[110px] flex-1 flex flex-col gap-4 overflow-hidden"
         style={{ touchAction: "none" }}
       >
-        <Header loading={loading} />
+        <Header
+          loading={loading}
+          leftLink={profileData?.headerLeftLink}
+          rightLink={profileData?.headerRightLink}
+        />
 
-        <ProfileCards loading={loading} />
+        <ProfileCards loading={loading} profileData={profileData} />
 
         <div className="relative flex justify-between items-center z-10 shrink-0 px-2 mt-8">
           {loading ? (
@@ -78,17 +88,23 @@ const Index = () => {
         <ActiveSection
           loading={loading}
           onOpenSocialModal={() => setIsSocialModalOpen(true)}
+          socialLinks={profileData?.socialLinks || []}
         />
       </div>
 
-      <Nav loading={loading} />
+      <Nav
+        loading={loading}
+        phoneNumber={profileData?.navPhone}
+        whatsappNumber={profileData?.navWhatsapp}
+      />
 
       <SocialModal
         isOpen={isSocialModalOpen}
         onClose={() => setIsSocialModalOpen(false)}
+        socialLinks={profileData?.socialLinks || []}
       />
     </div>
   );
 };
 
-export default Index;
+export default App;
