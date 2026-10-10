@@ -11,6 +11,11 @@ import { Link } from "react-router-dom";
 /*  CONFIG                                                             */
 /* ================================================================== */
 const API = "http://localhost:5001/api";
+// الدومين الحقيقي اللي هيتكتب على كارت NFC (مثلاً https://yourdomain.com)
+// حطه في .env بتاع الفرونت: REACT_APP_SITE_URL=https://yourdomain.com
+const SITE_URL = (
+  process.env.REACT_APP_SITE_URL || window.location.origin
+).replace(/\/$/, "");
 
 const CATEGORIES = [
   { id: "popular", label: "Popular" },
@@ -1065,9 +1070,7 @@ const NfcTab = ({ profile, notify }) => {
   const nfc = useNfc(notify);
   const [onCard, setOnCard] = useState("");
   const busy = nfc.status !== "idle";
-  const pageUrl = profile.slug
-    ? `${window.location.origin}/u/${profile.slug}`
-    : "";
+  const pageUrl = profile.slug ? `${SITE_URL}/u/${profile.slug}` : "";
   const matches = onCard && pageUrl && onCard.replace(/\/$/, "") === pageUrl;
 
   return (
@@ -1893,7 +1896,7 @@ const CardShell = ({ title, right, children }) => (
   </section>
 );
 
-const LinksTab = ({ links, setLinks, profile, notify }) => {
+const LinksTab = ({ links, setLinks, profile, notify, onCommit }) => {
   const [sheet, setSheet] = useState(null); // {type:'picker'} | {type:'form', mode, link}
   const [reorder, setReorder] = useState(false);
   const [dragKey, setDragKey] = useState(null);
@@ -1974,12 +1977,13 @@ const LinksTab = ({ links, setLinks, profile, notify }) => {
 
   const saveLink = (link) => {
     const mode = sheet?.mode;
-    setLinks((prev) =>
+    const next =
       mode === "edit"
-        ? prev.map((l) => (l._key === link._key ? link : l))
-        : [...prev, link],
-    );
+        ? links.map((l) => (l._key === link._key ? link : l))
+        : [...links, link];
+    setLinks(next);
     setSheet(null);
+    onCommit?.(next); // يحفظ في الداتابيز فوراً عشان يظهر في الصفحة العامة
   };
 
   const removeLink = (key) => {
@@ -2502,12 +2506,18 @@ const Dashboard = () => {
     return () => window.removeEventListener("beforeunload", handler);
   }, [dirty]);
 
-  const handleSave = async (e) => {
+  const handleSave = (e) => {
     e.preventDefault();
+    persist(links);
+  };
+
+  const persist = async (nextLinks) => {
     setSaving(true);
 
     // شيل الكروت الفاضية (اتضافت ومتملتش)
-    const cleaned = links.filter((l) => l.username?.trim() || l.url?.trim());
+    const cleaned = nextLinks.filter(
+      (l) => l.username?.trim() || l.url?.trim(),
+    );
 
     const payload = {
       ...profile,
@@ -2627,6 +2637,7 @@ const Dashboard = () => {
                   setLinks={setLinks}
                   profile={profile}
                   notify={notify}
+                  onCommit={persist}
                 />
               )}
 
