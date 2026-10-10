@@ -26,7 +26,6 @@ const Dashboard = () => {
 
   const [socialLinks, setSocialLinks] = useState([]);
 
-  // أول ما الصفحة تفتح، بنشوف لو الأدمن مسجل دخوله قبل كده
   useEffect(() => {
     const token = localStorage.getItem("adminToken");
     if (token) {
@@ -63,12 +62,15 @@ const Dashboard = () => {
       const response = await fetch("http://localhost:5001/api/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({
+          email: email.trim().toLowerCase(),
+          password: password.trim(),
+        }),
       });
 
       if (response.ok) {
         const data = await response.json();
-        localStorage.setItem("adminToken", data.token); // حفظ المفتاح في المتصفح
+        localStorage.setItem("adminToken", data.token);
         setIsAuthenticated(true);
         setLoginError("");
       } else {
@@ -80,10 +82,23 @@ const Dashboard = () => {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem("adminToken"); // مسح المفتاح
+    localStorage.removeItem("adminToken");
     setIsAuthenticated(false);
     setEmail("");
     setPassword("");
+  };
+
+  const handleFileUpload = (e, callback) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => {
+      callback(reader.result);
+    };
+    reader.onerror = (error) => {
+      console.error("Error reading file:", error);
+    };
   };
 
   const addSocialLink = () => {
@@ -115,7 +130,7 @@ const Dashboard = () => {
   const handleSave = async (e) => {
     e.preventDefault();
     setSaving(true);
-    const token = localStorage.getItem("adminToken"); // بنجيب المفتاح
+    const token = localStorage.getItem("adminToken");
 
     const payload = {
       ...profile,
@@ -131,7 +146,7 @@ const Dashboard = () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`, // بنبعت المفتاح للسيرفر عشان يوافق
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(payload),
       });
@@ -142,10 +157,12 @@ const Dashboard = () => {
         alert("❌ Session expired. Please login again.");
         handleLogout();
       } else {
-        alert("❌ Error saving data.");
+        const errorData = await response.json();
+        alert(`❌ Server Error: ${errorData.message}`);
+        console.error("Backend Error Details:", errorData);
       }
     } catch (error) {
-      alert("❌ Server is not responding.");
+      alert(`❌ Network Error: ${error.message}`);
     } finally {
       setSaving(false);
     }
@@ -343,17 +360,53 @@ const Dashboard = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 mb-1.5 ml-1">
-                        Avatar Image URL
+                        Avatar Image (URL or Upload)
                       </label>
-                      <input
-                        type="url"
-                        placeholder="https://..."
-                        value={profile.avatar_url}
-                        onChange={(e) =>
-                          setProfile({ ...profile, avatar_url: e.target.value })
-                        }
-                        className="w-full p-3.5 bg-gray-50 rounded-xl border border-gray-200 outline-none focus:border-blue-500 focus:bg-white transition-all text-sm"
-                      />
+                      <div className="flex flex-col sm:flex-row gap-2">
+                        <input
+                          type="text"
+                          placeholder="https://..."
+                          value={profile.avatar_url}
+                          onChange={(e) =>
+                            setProfile({
+                              ...profile,
+                              avatar_url: e.target.value,
+                            })
+                          }
+                          className="flex-1 p-3.5 bg-gray-50 rounded-xl border border-gray-200 outline-none focus:border-blue-500 focus:bg-white transition-all text-sm"
+                        />
+                        <div className="relative flex items-center justify-center">
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) =>
+                              handleFileUpload(e, (base64) =>
+                                setProfile({ ...profile, avatar_url: base64 }),
+                              )
+                            }
+                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                          />
+                          <button
+                            type="button"
+                            className="bg-[#101112] text-white px-5 py-3.5 rounded-xl text-sm font-bold w-full sm:w-auto hover:bg-gray-800 transition-all flex items-center justify-center gap-2"
+                          >
+                            <svg
+                              className="w-4 h-4"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth="2"
+                                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"
+                              ></path>
+                            </svg>
+                            Upload
+                          </button>
+                        </div>
+                      </div>
                     </div>
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 mb-1.5 ml-1">
@@ -630,21 +683,57 @@ const Dashboard = () => {
                           </div>
                           <div>
                             <label className="block text-xs font-semibold text-gray-500 mb-1">
-                              Image/SVG URL
+                              Image/SVG (URL or Upload)
                             </label>
-                            <input
-                              type="text"
-                              placeholder="https://..."
-                              value={link.image_url}
-                              onChange={(e) =>
-                                handleSocialChange(
-                                  index,
-                                  "image_url",
-                                  e.target.value,
-                                )
-                              }
-                              className="w-full p-2.5 bg-gray-50 rounded-lg border border-gray-200 outline-none focus:border-blue-500 focus:bg-white transition-all text-sm"
-                            />
+                            <div className="flex gap-2">
+                              <input
+                                type="text"
+                                placeholder="https://..."
+                                value={link.image_url}
+                                onChange={(e) =>
+                                  handleSocialChange(
+                                    index,
+                                    "image_url",
+                                    e.target.value,
+                                  )
+                                }
+                                className="flex-1 p-2.5 bg-gray-50 rounded-lg border border-gray-200 outline-none focus:border-blue-500 focus:bg-white transition-all text-sm"
+                              />
+                              <div className="relative flex items-center justify-center">
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  onChange={(e) =>
+                                    handleFileUpload(e, (base64) =>
+                                      handleSocialChange(
+                                        index,
+                                        "image_url",
+                                        base64,
+                                      ),
+                                    )
+                                  }
+                                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                />
+                                <button
+                                  type="button"
+                                  className="bg-gray-200 text-gray-700 px-3 py-2.5 rounded-lg text-xs font-bold hover:bg-gray-300 transition-all flex items-center justify-center"
+                                >
+                                  <svg
+                                    className="w-4 h-4"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth="2"
+                                      d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"
+                                    ></path>
+                                  </svg>
+                                </button>
+                              </div>
+                            </div>
                           </div>
                         </div>
                       </div>

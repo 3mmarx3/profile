@@ -5,17 +5,14 @@ const jwt = require("jsonwebtoken");
 
 const app = express();
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
 const MONGO_URI =
   "mongodb+srv://ammar132804_db_user:AmmarDev2026@cluster0.tuu7egn.mongodb.net/profileDB?retryWrites=true&w=majority&appName=Cluster0";
 const SECRET_KEY = "Ammar_Super_Secret_Key_2026";
 
-mongoose
-  .connect(MONGO_URI)
-  .then(() => console.log("Connected to MongoDB successfully!"))
-  .catch((err) => console.error("Error connecting to MongoDB:", err));
-
+// Schema
 const profileSchema = new mongoose.Schema({
   name: String,
   role: String,
@@ -41,6 +38,7 @@ const profileSchema = new mongoose.Schema({
 
 const Profile = mongoose.model("Profile", profileSchema);
 
+// Login
 app.post("/api/login", (req, res) => {
   const email = req.body.email ? req.body.email.trim().toLowerCase() : "";
   const password = req.body.password ? req.body.password.trim() : "";
@@ -53,23 +51,27 @@ app.post("/api/login", (req, res) => {
   }
 });
 
+// Auth Middleware
 const authenticateToken = (req, res, next) => {
   const authHeader = req.headers["authorization"];
   const token = authHeader && authHeader.split(" ")[1];
 
-  if (!token)
+  if (!token) {
     return res
       .status(401)
       .json({ message: "Access Denied: No Token Provided" });
+  }
 
   jwt.verify(token, SECRET_KEY, (err, user) => {
-    if (err)
+    if (err) {
       return res.status(403).json({ message: "Invalid or Expired Token" });
+    }
     req.user = user;
     next();
   });
 };
 
+// GET Profile
 app.get("/api/profile", async (req, res) => {
   try {
     let profileData = await Profile.findOne();
@@ -90,10 +92,12 @@ app.get("/api/profile", async (req, res) => {
     }
     res.json(profileData);
   } catch (err) {
+    console.error("GET Error:", err.message);
     res.status(500).json({ message: err.message });
   }
 });
 
+// POST Profile
 app.post("/api/profile", authenticateToken, async (req, res) => {
   try {
     const {
@@ -127,13 +131,37 @@ app.post("/api/profile", authenticateToken, async (req, res) => {
       },
       { new: true, upsert: true },
     );
+
     res.json(updatedProfile);
   } catch (err) {
+    console.error("POST Error:", err.message);
     res.status(500).json({ message: err.message });
   }
 });
 
+// === تشغيل السيرفر بعد الاتصال بـ MongoDB ===
 const PORT = 5001;
-app.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
-});
+
+async function startServer() {
+  try {
+    console.log("⏳ Connecting to MongoDB...");
+    await mongoose.connect(MONGO_URI);
+    console.log("✅ Connected to MongoDB successfully!");
+
+    app.listen(PORT, () => {
+      console.log(`🚀 Server is running on http://localhost:${PORT}`);
+    });
+  } catch (err) {
+    console.error("❌ Failed to connect to MongoDB:");
+    console.error(err.message);
+    console.log("\n🔧 الحل:");
+    console.log("1. روح على MongoDB Atlas → Network Access");
+    console.log(
+      "2. اضغط Add IP Address → Allow Access from Anywhere (0.0.0.0/0)",
+    );
+    console.log("3. تأكد إن الباسورد صحيح في الـ Connection String");
+    process.exit(1);
+  }
+}
+
+startServer();
