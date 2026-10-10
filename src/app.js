@@ -8,7 +8,8 @@ import ProfileCards from "./Component/ProfileCards";
 import ActiveSection from "./Component/ActiveSection";
 import SocialModal from "./Component/SocialModal";
 
-const API = "http://localhost:5001/api";
+// ديناميكي: لو فاتحه من جهاز تاني هيجيب الـ IP بتاع جهازك تلقائياً بنفس البورت 5001
+const API = `http://${window.location.hostname}:5001/api`;
 
 const App = () => {
   const { slug } = useParams();
@@ -86,6 +87,15 @@ const App = () => {
       className="app-container w-full max-w-md mx-auto relative h-[100dvh] flex flex-col overflow-hidden bg-[#f4f5f7] select-none touch-none"
       style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
     >
+      {/* وميض الرادار لزرار البلس */}
+      <style>{`
+        @keyframes radarPulse {
+          0%   { transform: scale(1);   opacity: 0.9; }
+          100% { transform: scale(1.6); opacity: 0; }
+        }
+        .radar-ring { animation: radarPulse 3.6s cubic-bezier(0.16, 0.6, 0.4, 1) infinite; }
+      `}</style>
+
       <div
         className="px-4 sm:px-5 pt-4 sm:pt-5 pb-[110px] flex-1 flex flex-col gap-4 overflow-hidden"
         style={{ touchAction: "none" }}
@@ -122,21 +132,32 @@ const App = () => {
                   Find new friends and explore profiles
                 </p>
               </div>
-              <button className="w-[44px] h-[44px] sm:w-[48px] sm:h-[48px] flex-shrink-0 rounded-full bg-white flex items-center justify-center text-[#101112] cursor-pointer hover:scale-105 transition-transform border border-gray-100">
-                <svg
-                  width="22"
-                  height="22"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <line x1="12" y1="5" x2="12" y2="19"></line>
-                  <line x1="5" y1="12" x2="19" y2="12"></line>
-                </svg>
-              </button>
+
+              <div className="relative w-[44px] h-[44px] sm:w-[48px] sm:h-[48px] flex-shrink-0">
+                {[0, 1.2, 2.4].map((delay) => (
+                  <span
+                    key={delay}
+                    aria-hidden="true"
+                    className="radar-ring motion-reduce:hidden absolute inset-0 rounded-full bg-white shadow-[0_0_0_1px_rgba(16,17,18,0.06)] pointer-events-none"
+                    style={{ animationDelay: `${delay}s` }}
+                  />
+                ))}
+                <button className="relative w-full h-full rounded-full bg-white flex items-center justify-center text-[#101112] cursor-pointer hover:scale-105 transition-transform border border-gray-100">
+                  <svg
+                    width="22"
+                    height="22"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                  </svg>
+                </button>
+              </div>
             </>
           )}
         </div>

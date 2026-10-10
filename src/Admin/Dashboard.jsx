@@ -10,7 +10,7 @@ import { Link } from "react-router-dom";
 /* ================================================================== */
 /*  CONFIG                                                             */
 /* ================================================================== */
-const API = "http://localhost:5001/api";
+const API = `http://${window.location.hostname}:5001/api`;
 // الدومين الحقيقي اللي هيتكتب على كارت NFC (مثلاً https://yourdomain.com)
 // حطه في .env بتاع الفرونت: REACT_APP_SITE_URL=https://yourdomain.com
 const SITE_URL = (
@@ -981,97 +981,132 @@ const normalizeUrl = (u) =>
   /^[a-z][a-z0-9+.-]*:/i.test(u.trim()) ? u.trim() : `https://${u.trim()}`;
 
 const decodeRecord = (record) => {
-  if (record.recordType !== "url" && record.recordType !== "text") return "";
+  if (!["url", "absolute-url", "text"].includes(record.recordType)) return "";
   return new TextDecoder(record.encoding || "utf-8").decode(record.data);
 };
 
+const nfcErrorMessage = (err) =>
+  err?.name === "NotAllowedError"
+    ? "NFC permission denied. Allow NFC for this site."
+    : err?.name === "NotSupportedError"
+      ? "NFC is turned off or not available."
+      : err?.message || "NFC error";
+
 const useNfc = (notify) => {
   const supported = typeof window !== "undefined" && "NDEFReader" in window;
-  const [status, setStatus] = useState("idle"); // idle | reading | writing
+  // starting | listening | writing | idle
+  const [status, setStatus] = useState(supported ? "starting" : "idle");
+  const [needsPermission, setNeedsPermission] = useState(false);
   const abortRef = useRef(null);
+  const onReadRef = useRef(null);
+  const mounted = useRef(true);
 
-  const stop = useCallback(() => {
+  const abort = () => {
     abortRef.current?.abort();
     abortRef.current = null;
-    setStatus("idle");
+  };
+
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+      abort();
+    };
   }, []);
 
-  useEffect(() => () => abortRef.current?.abort(), []);
+  // سمع للكارت باستمرار (من غير ما تدوس Read)
+  const listen = useCallback(
+    async (onRead) => {
+      if (!supported) return;
+      if (onRead) onReadRef.current = onRead;
+      abort();
+      const ctrl = new AbortController();
+      abortRef.current = ctrl;
+      setStatus("starting");
+      try {
+        const reader = new window.NDEFReader();
+        // الـ handlers قبل scan عشان منفوتش أول قراءة
+        reader.onreadingerror = () =>
+          notify("Couldn't read this card", "error");
+        reader.onreading = (e) => {
+          const value =
+            Array.from(e.message.records).map(decodeRecord).find(Boolean) || "";
+          onReadRef.current?.(value);
+        };
+        await reader.scan({ signal: ctrl.signal });
+        if (!mounted.current || ctrl.signal.aborted) return;
+        setStatus("listening");
+        setNeedsPermission(false);
+      } catch (err) {
+        if (err?.name === "AbortError" || !mounted.current) return;
+        setStatus("idle");
+        if (err?.name === "NotAllowedError") setNeedsPermission(true);
+        else notify(nfcErrorMessage(err), "error");
+      }
+    },
+    [supported, notify],
+  );
 
-  const fail = (err) => {
-    if (err?.name === "AbortError") return;
-    const msg =
-      err?.name === "NotAllowedError"
-        ? "NFC permission denied. Allow NFC for this site."
-        : err?.name === "NotSupportedError"
-          ? "NFC is turned off or not available."
-          : err?.message || "NFC error";
-    notify(msg, "error");
-  };
-
-  const read = async (onResult) => {
-    if (!supported)
-      return notify("NFC works on Chrome for Android only.", "error");
-    stop();
-    const ctrl = new AbortController();
-    abortRef.current = ctrl;
-    try {
-      setStatus("reading");
-      const reader = new window.NDEFReader();
-      await reader.scan({ signal: ctrl.signal });
-      reader.onreadingerror = () => {
-        notify("Couldn't read this card", "error");
-        stop();
-      };
-      reader.onreading = (e) => {
-        const value = e.message.records.map(decodeRecord).find(Boolean);
-        stop();
-        if (value) {
-          onResult(value);
-          notify("Card read");
-        } else {
-          notify("The card is empty", "error");
-        }
-      };
-    } catch (err) {
-      stop();
-      fail(err);
-    }
-  };
-
+  // اكتب لينك على الكارت، وبعدها ارجع اسمع تاني
   const write = async (url, onDone) => {
     if (!supported)
       return notify("NFC works on Chrome for Android only.", "error");
     if (!url?.trim()) return notify("Add a link first.", "error");
-    stop();
+    abort();
     const ctrl = new AbortController();
     abortRef.current = ctrl;
+    setStatus("writing");
     try {
-      setStatus("writing");
-      const writer = new window.NDEFReader();
-      await writer.write(
-        { records: [{ recordType: "url", data: normalizeUrl(url) }] },
+      const finalUrl = normalizeUrl(url);
+      await new window.NDEFReader().write(
+        { records: [{ recordType: "url", data: finalUrl }] },
         { overwrite: true, signal: ctrl.signal },
       );
-      onDone?.(normalizeUrl(url));
+      onDone?.(finalUrl);
       notify("Card updated ✓");
     } catch (err) {
-      fail(err);
+      if (err?.name !== "AbortError") notify(nfcErrorMessage(err), "error");
     } finally {
-      stop();
+      if (mounted.current) listen();
     }
   };
 
-  return { supported, status, read, write, stop };
+  const cancelWrite = () => {
+    abort();
+    listen();
+  };
+
+  return { supported, status, needsPermission, listen, write, cancelWrite };
 };
 
-/* تاب NFC: للينك الأساسي للموقع بس (مش لينكات السوشيال) */
+/* تاب NFC: يقرأ الكارت تلقائي، ويكتب لينك جديد (أو اللينك الأساسي) */
 const NfcTab = ({ profile, notify }) => {
   const nfc = useNfc(notify);
-  const [onCard, setOnCard] = useState("");
-  const busy = nfc.status !== "idle";
+  const { listen } = nfc;
+  const [onCard, setOnCard] = useState(null); // null = لسه ماقريناش كارت
+  const [newLink, setNewLink] = useState("");
+
   const pageUrl = profile.slug ? `${SITE_URL}/u/${profile.slug}` : "";
-  const matches = onCard && pageUrl && onCard.replace(/\/$/, "") === pageUrl;
+  const target = newLink.trim() || pageUrl;
+  const writing = nfc.status === "writing";
+  const matches =
+    onCard &&
+    pageUrl &&
+    onCard.replace(/\/$/, "") === pageUrl.replace(/\/$/, "");
+
+  const handleRead = useCallback(
+    (value) => {
+      setOnCard(value);
+      if (value) notify("Card read");
+      else notify("The card is empty", "error");
+    },
+    [notify],
+  );
+
+  // ابدأ السمع أول ما التاب يفتح
+  useEffect(() => {
+    if (nfc.supported) listen(handleRead);
+  }, [nfc.supported, listen, handleRead]);
 
   return (
     <div className="space-y-5 max-w-xl">
@@ -1092,14 +1127,24 @@ const NfcTab = ({ profile, notify }) => {
 
       <Panel
         title="NFC card"
-        description="Read what's on your card, or write your main link to it."
+        description="Tap your card on the back of your phone to see the link saved on it."
       >
         <div className="flex items-center gap-3 mb-4">
-          <span className="w-11 h-11 rounded-full bg-[#101112] text-[#C8F331] flex items-center justify-center shrink-0">
+          <span
+            className={`w-11 h-11 rounded-full bg-[#101112] text-[#C8F331] flex items-center justify-center shrink-0 ${
+              nfc.status === "listening" ? "animate-pulse" : ""
+            }`}
+          >
             <Icon name="nfc" className="w-5 h-5" />
           </span>
           <p className="text-xs text-gray-500">
-            Hold the card near the back of your phone when asked.
+            {writing
+              ? "Writing — hold the card near your phone…"
+              : nfc.status === "listening"
+                ? "Listening — tap your card now."
+                : nfc.status === "starting"
+                  ? "Starting…"
+                  : "Not listening."}
           </p>
         </div>
 
@@ -1108,57 +1153,89 @@ const NfcTab = ({ profile, notify }) => {
             NFC isn't available here. Open this page in Chrome on an Android
             phone (HTTPS).
           </p>
-        ) : busy ? (
-          <div className="flex items-center justify-between gap-3">
-            <p className="text-sm font-bold text-[#101112] animate-pulse">
-              {nfc.status === "reading" ? "Reading" : "Writing"} — hold the card
-              near your phone…
-            </p>
-            <button
-              type="button"
-              onClick={nfc.stop}
-              className="text-xs font-bold text-red-500 outline-none"
-            >
-              Cancel
-            </button>
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              onClick={() => nfc.read(setOnCard)}
-              className="py-3 rounded-xl bg-gray-100 text-sm font-bold text-gray-700 hover:bg-gray-200 transition-colors outline-none"
-            >
-              Read card
-            </button>
-            <button
-              type="button"
-              disabled={!pageUrl}
-              onClick={() => nfc.write(pageUrl, setOnCard)}
-              className="py-3 rounded-xl bg-[#C8F331] text-sm font-black text-[#101112] hover:bg-[#b8e321] transition-colors disabled:opacity-40 outline-none"
-            >
-              Write to card
-            </button>
-          </div>
-        )}
+        ) : nfc.needsPermission || nfc.status === "idle" ? (
+          <button
+            type="button"
+            onClick={() => nfc.listen(handleRead)}
+            className="w-full py-3 rounded-xl bg-[#101112] text-sm font-bold text-white outline-none"
+          >
+            Enable NFC & start listening
+          </button>
+        ) : null}
 
-        {onCard && (
+        {onCard !== null && (
           <div className="mt-4 rounded-xl border border-gray-200 p-3">
             <p className="text-[11px] font-bold text-gray-400 mb-1">
               On the card
             </p>
-            <p className="text-sm font-semibold text-[#101112] break-all">
-              {onCard}
-            </p>
-            <p
-              className={`text-xs font-bold mt-2 ${matches ? "text-green-600" : "text-amber-600"}`}
-            >
-              {matches
-                ? "Matches your main link"
-                : "Different from your main link"}
-            </p>
+            {onCard ? (
+              <>
+                <p className="text-sm font-semibold text-[#101112] break-all">
+                  {onCard}
+                </p>
+                <div className="flex items-center justify-between mt-2">
+                  <p
+                    className={`text-xs font-bold ${matches ? "text-green-600" : "text-amber-600"}`}
+                  >
+                    {matches
+                      ? "Matches your main link"
+                      : "Different from your main link"}
+                  </p>
+                  <a
+                    href={normalizeUrl(onCard)}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-xs font-bold text-[#101112] underline"
+                  >
+                    Open
+                  </a>
+                </div>
+              </>
+            ) : (
+              <p className="text-sm text-gray-500">The card is empty.</p>
+            )}
           </div>
         )}
+      </Panel>
+
+      <Panel
+        title="Write a link to the card"
+        description="Leave it empty to use your main profile link."
+      >
+        <TextInput
+          type="url"
+          placeholder={pageUrl || "https://..."}
+          value={newLink}
+          onChange={(e) => setNewLink(e.target.value)}
+          className="mb-3"
+        />
+        {writing ? (
+          <button
+            type="button"
+            onClick={nfc.cancelWrite}
+            className="w-full py-3 rounded-xl bg-red-50 text-sm font-bold text-red-500 outline-none"
+          >
+            Cancel — waiting for the card…
+          </button>
+        ) : (
+          <button
+            type="button"
+            disabled={!target || !nfc.supported}
+            onClick={() =>
+              nfc.write(target, (written) => {
+                setOnCard(written);
+                setNewLink("");
+              })
+            }
+            className="w-full py-3 rounded-xl bg-[#C8F331] text-sm font-black text-[#101112] hover:bg-[#b8e321] transition-colors disabled:opacity-40 outline-none"
+          >
+            Write to card
+          </button>
+        )}
+        <p className="text-[11px] text-gray-400 mt-2">
+          Press the button, then tap the card — it's written as soon as the
+          phone detects it.
+        </p>
       </Panel>
     </div>
   );
@@ -1907,12 +1984,14 @@ const LinksTab = ({ links, setLinks, profile, notify, onCommit }) => {
     .filter((p) => p && !links.some((l) => l.platform_name === p.name))
     .slice(0, 5);
 
-  const setAll = (value) =>
-    setLinks((prev) => prev.map((l) => ({ ...l, active: value })));
+  // أي تغيير في التفعيل بيتحفظ في الداتابيز فوراً عشان يتحدث في الصفحة العامة
+  const commit = (next) => {
+    setLinks(next);
+    onCommit?.(next);
+  };
+  const setAll = (value) => commit(links.map((l) => ({ ...l, active: value })));
   const setActive = (key, value) =>
-    setLinks((prev) =>
-      prev.map((l) => (l._key === key ? { ...l, active: value } : l)),
-    );
+    commit(links.map((l) => (l._key === key ? { ...l, active: value } : l)));
 
   const move = useCallback(
     (from, to) =>
@@ -1990,16 +2069,16 @@ const LinksTab = ({ links, setLinks, profile, notify, onCommit }) => {
     const index = links.findIndex((l) => l._key === key);
     if (index < 0) return;
     const removed = links[index];
-    setLinks((prev) => prev.filter((l) => l._key !== key));
+    const next = links.filter((l) => l._key !== key);
+    commit(next);
     setSheet(null);
     notify(`${removed.platform_name || "Link"} deleted`, "success", {
       label: "Undo",
-      onClick: () =>
-        setLinks((prev) => {
-          const copy = [...prev];
-          copy.splice(Math.min(index, copy.length), 0, removed);
-          return copy;
-        }),
+      onClick: () => {
+        const restored = [...next];
+        restored.splice(Math.min(index, restored.length), 0, removed);
+        commit(restored);
+      },
     });
   };
 
@@ -2013,7 +2092,10 @@ const LinksTab = ({ links, setLinks, profile, notify, onCommit }) => {
             {links.length > 1 && (
               <button
                 type="button"
-                onClick={() => setReorder((v) => !v)}
+                onClick={() => {
+                  if (reorder) onCommit?.(links); // حفظ الترتيب الجديد
+                  setReorder((v) => !v);
+                }}
                 className={`text-xs font-bold px-3 py-1.5 rounded-full transition-colors outline-none ${
                   reorder
                     ? "bg-[#101112] text-white"
@@ -2355,7 +2437,7 @@ const TABS = [
     id: "nfc",
     label: "NFC",
     icon: "nfc",
-    desc: "Read your NFC card or write your main profile link to it.",
+    desc: "Tap your NFC card to see its link, or write a new link to it.",
   },
   {
     id: "security",
@@ -2535,7 +2617,7 @@ const Dashboard = () => {
         body: JSON.stringify(payload),
       });
       if (res.ok) {
-        setLinks(cleaned);
+        if (cleaned.length !== nextLinks.length) setLinks(cleaned);
         setSavedSnapshot(makeSnapshot(profile, cleaned));
         notify("Saved successfully");
       } else if (res.status === 401 || res.status === 403) {
@@ -2585,13 +2667,15 @@ const Dashboard = () => {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Link
-              to={profile.slug ? `/u/${profile.slug}` : "/"}
-              className="flex items-center gap-2 text-xs font-bold text-[#101112] bg-[#C8F331] px-3.5 sm:px-4 py-2.5 rounded-full hover:bg-[#b8e321] transition-colors"
-            >
-              <Icon name="eye" />{" "}
-              <span className="hidden sm:inline">View profile</span>
-            </Link>
+            {profile.slug && (
+              <Link
+                to={`/u/${profile.slug}`}
+                className="flex items-center gap-2 text-xs font-bold text-[#101112] bg-[#C8F331] px-3.5 sm:px-4 py-2.5 rounded-full hover:bg-[#b8e321] transition-colors"
+              >
+                <Icon name="eye" />{" "}
+                <span className="hidden sm:inline">View profile</span>
+              </Link>
+            )}
             <button
               onClick={logout}
               className="flex items-center gap-2 text-xs font-bold text-gray-500 hover:text-red-500 px-3 py-2.5 rounded-full transition-colors"

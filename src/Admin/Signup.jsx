@@ -1,16 +1,20 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
-const API = "http://localhost:5001/api";
+const API = `http://${window.location.hostname}:5001/api`;
 
 const INPUT =
   "w-full px-3.5 py-3 bg-gray-50 rounded-xl border border-gray-200 outline-none focus:border-[#101112] focus:bg-white transition-all text-base sm:text-sm";
 
 const Field = ({ label, hint, children }) => (
   <label className="block">
-    <span className="block text-[13px] font-semibold text-gray-700 mb-1.5">{label}</span>
+    <span className="block text-[13px] font-semibold text-gray-700 mb-1.5">
+      {label}
+    </span>
     {children}
-    {hint && <span className="block text-[11px] text-gray-400 mt-1.5">{hint}</span>}
+    {hint && (
+      <span className="block text-[11px] text-gray-400 mt-1.5">{hint}</span>
+    )}
   </label>
 );
 
@@ -32,7 +36,8 @@ const Signup = () => {
     const password = form.password;
 
     if (name.length < 2) return setError("Please enter your name.");
-    if (password.length < 8) return setError("Password must be at least 8 characters.");
+    if (password.length < 8)
+      return setError("Password must be at least 8 characters.");
 
     setBusy(true);
     try {
@@ -49,7 +54,9 @@ const Signup = () => {
       } else if (res.status === 409) {
         setError("This email already has an account. Try signing in instead.");
       } else {
-        setError(data.message || "Couldn't create the account. Please try again.");
+        setError(
+          data.message || "Couldn't create the account. Please try again.",
+        );
       }
     } catch {
       setError("Server error, please try again.");
@@ -59,11 +66,19 @@ const Signup = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#f4f5f7] flex items-center justify-center p-4 font-sans" dir="ltr">
+    <div
+      className="min-h-screen bg-[#f4f5f7] flex items-center justify-center p-4 font-sans"
+      dir="ltr"
+    >
       <div className="max-w-md w-full bg-white rounded-[32px] border border-gray-200 p-7 sm:p-10">
         <div className="text-center mb-8">
           <div className="w-16 h-16 bg-[#101112] text-[#C8F331] rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg
+              className="w-8 h-8"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -72,8 +87,12 @@ const Signup = () => {
               />
             </svg>
           </div>
-          <h1 className="text-2xl font-black text-[#101112] tracking-tight">Create your account</h1>
-          <p className="text-sm text-gray-500 mt-2">Get your own profile page in a minute</p>
+          <h1 className="text-2xl font-black text-[#101112] tracking-tight">
+            Create your account
+          </h1>
+          <p className="text-sm text-gray-500 mt-2">
+            Get your own profile page in a minute
+          </p>
         </div>
 
         <form onSubmit={submit} className="space-y-5">
@@ -120,7 +139,11 @@ const Signup = () => {
           </Field>
 
           <label className="flex items-center gap-2 text-xs font-semibold text-gray-500 cursor-pointer">
-            <input type="checkbox" checked={show} onChange={(e) => setShow(e.target.checked)} />
+            <input
+              type="checkbox"
+              checked={show}
+              onChange={(e) => setShow(e.target.checked)}
+            />
             Show password
           </label>
 
@@ -134,7 +157,10 @@ const Signup = () => {
 
           <p className="text-center text-sm text-gray-500">
             Already have an account?{" "}
-            <Link to="/dashboard" className="font-bold text-[#101112] underline">
+            <Link
+              to="/dashboard"
+              className="font-bold text-[#101112] underline"
+            >
               Sign in
             </Link>
           </p>
