@@ -1,6 +1,6 @@
 import React, { useState, useRef } from "react";
 import Skeleton from "react-loading-skeleton";
-import ammarImg from "../assets/images/Ammar_Ahmed.PNG";
+import ammarImg from "../assets/images/profile-user-account.svg";
 
 const ProfileCards = ({ loading, profileData }) => {
   const [stackOrder, setStackOrder] = useState([0, 1, 2]);
@@ -10,34 +10,40 @@ const ProfileCards = ({ loading, profileData }) => {
 
   const touchStartRef = useRef({ x: 0, y: 0 });
 
+  const displayName = profileData?.name || profileData?.fullName || "";
+  const displayRole = profileData?.role || profileData?.role_type || "";
+  const displayBio = profileData?.bio || "";
+  const displayAvatar = profileData?.avatar_url || ammarImg;
+  const displayConnectedCount = profileData?.connected_count || 0;
+
   const dynamicProfiles = [
     {
       id: 1,
-      full_name: profileData?.name || "Ammar Ahmed",
-      role_type: profileData?.role || "Developer",
-      bio: profileData?.bio || "Web Developer @ Sphinx | Computers",
-      connected_count: profileData?.connected_count || 0,
-      avatar_url: profileData?.avatar_url || ammarImg,
+      full_name: displayName,
+      role_type: displayRole,
+      bio: displayBio,
+      connected_count: displayConnectedCount,
+      avatar_url: displayAvatar,
       bg_color: "white",
       is_direct: true,
     },
     {
       id: 2,
-      full_name: profileData?.name || "Ammar Ahmed",
-      role_type: profileData?.role || "Developer",
-      bio: profileData?.bio || "Web Developer @ Sphinx | Computers",
-      connected_count: profileData?.connected_count || 0,
-      avatar_url: profileData?.avatar_url || ammarImg,
+      full_name: displayName,
+      role_type: displayRole,
+      bio: displayBio,
+      connected_count: displayConnectedCount,
+      avatar_url: displayAvatar,
       bg_color: "#101112",
       is_direct: true,
     },
     {
       id: 3,
-      full_name: profileData?.name || "Ammar Ahmed",
-      role_type: profileData?.role || "Developer",
-      bio: profileData?.bio || "Web Developer @ Sphinx | Computers",
-      connected_count: profileData?.connected_count || 0,
-      avatar_url: profileData?.avatar_url || ammarImg,
+      full_name: displayName,
+      role_type: displayRole,
+      bio: displayBio,
+      connected_count: displayConnectedCount,
+      avatar_url: displayAvatar,
       bg_color: "#C8F331",
       is_direct: true,
     },

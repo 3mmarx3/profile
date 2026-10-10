@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { Link, useParams } from "react-router-dom";
 import Skeleton from "react-loading-skeleton";
 import "react-loading-skeleton/dist/skeleton.css";
 import Header from "./includes/Header";
@@ -7,23 +8,78 @@ import ProfileCards from "./Component/ProfileCards";
 import ActiveSection from "./Component/ActiveSection";
 import SocialModal from "./Component/SocialModal";
 
+const API = "http://localhost:5001/api";
+
 const App = () => {
+  const { slug } = useParams();
+
   const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
   const [isSocialModalOpen, setIsSocialModalOpen] = useState(false);
   const [profileData, setProfileData] = useState(null);
 
   useEffect(() => {
-    fetch("http://localhost:5001/api/profile")
-      .then((res) => res.json())
+    const controller = new AbortController();
+    setLoading(true);
+    setNotFound(false);
+    setProfileData(null);
+
+    const url = slug
+      ? `${API}/profile/${encodeURIComponent(slug)}`
+      : `${API}/profile`;
+
+    fetch(url, { signal: controller.signal })
+      .then((res) => {
+        if (res.status === 404) {
+          setNotFound(true);
+          return null;
+        }
+        return res.json();
+      })
       .then((data) => {
-        setProfileData(data);
+        if (data) {
+          setProfileData({
+            ...data,
+            socialLinks: (data.socialLinks || []).filter(
+              (l) => l.active !== false,
+            ),
+          });
+        }
         setLoading(false);
       })
       .catch((error) => {
+        if (error.name === "AbortError") return;
         console.error("Error fetching data:", error);
         setLoading(false);
       });
-  }, []);
+
+    return () => controller.abort();
+  }, [slug]);
+
+  if (notFound) {
+    return (
+      <div
+        className="app-container w-full max-w-md mx-auto h-[100dvh] flex flex-col items-center justify-center px-8 text-center bg-[#f4f5f7]"
+        style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+      >
+        <div className="w-16 h-16 rounded-full bg-white border border-gray-100 flex items-center justify-center mb-5 text-2xl">
+          🔍
+        </div>
+        <h1 className="text-[20px] font-semibold text-[#101112] mb-1">
+          Profile not found
+        </h1>
+        <p className="text-[14px] text-[#9A9EA6] mb-6">
+          This page doesn't exist or the address was changed.
+        </p>
+        <Link
+          to="/signup"
+          className="bg-[#C8F331] text-[#101112] font-bold text-[14px] px-6 py-3 rounded-full hover:bg-[#b8e321] transition-colors"
+        >
+          Create your own page
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div
