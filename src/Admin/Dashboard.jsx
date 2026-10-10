@@ -655,7 +655,7 @@ const PLATFORMS = [
     "Cash App",
     S + "dollar-sign",
     "#00D64F",
-    "https://cash.app/${u}",
+    "https://cash.app/$" + "{u}",
     "cashtag",
   ),
   P(
@@ -811,6 +811,7 @@ const ICONS = {
   check: "M5 13l4 4L19 7",
   close: "M6 18L18 6M6 6l12 12",
   edit: "M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z",
+  nfc: "M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0",
 };
 
 const Icon = ({ name, className = "w-4 h-4" }) => (
@@ -967,6 +968,198 @@ const Toast = ({ toast }) =>
       )}
     </div>
   ) : null;
+
+/* ================================================================== */
+/*  NFC (Web NFC — Chrome Android + HTTPS only)                        */
+/* ================================================================== */
+const normalizeUrl = (u) =>
+  /^[a-z][a-z0-9+.-]*:/i.test(u.trim()) ? u.trim() : `https://${u.trim()}`;
+
+const decodeRecord = (record) => {
+  if (record.recordType !== "url" && record.recordType !== "text") return "";
+  return new TextDecoder(record.encoding || "utf-8").decode(record.data);
+};
+
+const useNfc = (notify) => {
+  const supported = typeof window !== "undefined" && "NDEFReader" in window;
+  const [status, setStatus] = useState("idle"); // idle | reading | writing
+  const abortRef = useRef(null);
+
+  const stop = useCallback(() => {
+    abortRef.current?.abort();
+    abortRef.current = null;
+    setStatus("idle");
+  }, []);
+
+  useEffect(() => () => abortRef.current?.abort(), []);
+
+  const fail = (err) => {
+    if (err?.name === "AbortError") return;
+    const msg =
+      err?.name === "NotAllowedError"
+        ? "NFC permission denied. Allow NFC for this site."
+        : err?.name === "NotSupportedError"
+          ? "NFC is turned off or not available."
+          : err?.message || "NFC error";
+    notify(msg, "error");
+  };
+
+  const read = async (onResult) => {
+    if (!supported)
+      return notify("NFC works on Chrome for Android only.", "error");
+    stop();
+    const ctrl = new AbortController();
+    abortRef.current = ctrl;
+    try {
+      setStatus("reading");
+      const reader = new window.NDEFReader();
+      await reader.scan({ signal: ctrl.signal });
+      reader.onreadingerror = () => {
+        notify("Couldn't read this card", "error");
+        stop();
+      };
+      reader.onreading = (e) => {
+        const value = e.message.records.map(decodeRecord).find(Boolean);
+        stop();
+        if (value) {
+          onResult(value);
+          notify("Card read");
+        } else {
+          notify("The card is empty", "error");
+        }
+      };
+    } catch (err) {
+      stop();
+      fail(err);
+    }
+  };
+
+  const write = async (url, onDone) => {
+    if (!supported)
+      return notify("NFC works on Chrome for Android only.", "error");
+    if (!url?.trim()) return notify("Add a link first.", "error");
+    stop();
+    const ctrl = new AbortController();
+    abortRef.current = ctrl;
+    try {
+      setStatus("writing");
+      const writer = new window.NDEFReader();
+      await writer.write(
+        { records: [{ recordType: "url", data: normalizeUrl(url) }] },
+        { overwrite: true, signal: ctrl.signal },
+      );
+      onDone?.(normalizeUrl(url));
+      notify("Card updated ✓");
+    } catch (err) {
+      fail(err);
+    } finally {
+      stop();
+    }
+  };
+
+  return { supported, status, read, write, stop };
+};
+
+/* تاب NFC: للينك الأساسي للموقع بس (مش لينكات السوشيال) */
+const NfcTab = ({ profile, notify }) => {
+  const nfc = useNfc(notify);
+  const [onCard, setOnCard] = useState("");
+  const busy = nfc.status !== "idle";
+  const pageUrl = profile.slug
+    ? `${window.location.origin}/u/${profile.slug}`
+    : "";
+  const matches = onCard && pageUrl && onCard.replace(/\/$/, "") === pageUrl;
+
+  return (
+    <div className="space-y-5 max-w-xl">
+      <Panel
+        title="Your main link"
+        description="This is the link that will be written to your NFC card."
+      >
+        {pageUrl ? (
+          <p className="px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 text-sm font-semibold text-[#101112] break-all">
+            {pageUrl}
+          </p>
+        ) : (
+          <p className="text-sm text-gray-500">
+            Set your page address in the Profile tab first.
+          </p>
+        )}
+      </Panel>
+
+      <Panel
+        title="NFC card"
+        description="Read what's on your card, or write your main link to it."
+      >
+        <div className="flex items-center gap-3 mb-4">
+          <span className="w-11 h-11 rounded-full bg-[#101112] text-[#C8F331] flex items-center justify-center shrink-0">
+            <Icon name="nfc" className="w-5 h-5" />
+          </span>
+          <p className="text-xs text-gray-500">
+            Hold the card near the back of your phone when asked.
+          </p>
+        </div>
+
+        {!nfc.supported ? (
+          <p className="text-sm text-gray-500 bg-gray-50 border border-gray-200 rounded-xl p-3">
+            NFC isn't available here. Open this page in Chrome on an Android
+            phone (HTTPS).
+          </p>
+        ) : busy ? (
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-sm font-bold text-[#101112] animate-pulse">
+              {nfc.status === "reading" ? "Reading" : "Writing"} — hold the card
+              near your phone…
+            </p>
+            <button
+              type="button"
+              onClick={nfc.stop}
+              className="text-xs font-bold text-red-500 outline-none"
+            >
+              Cancel
+            </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => nfc.read(setOnCard)}
+              className="py-3 rounded-xl bg-gray-100 text-sm font-bold text-gray-700 hover:bg-gray-200 transition-colors outline-none"
+            >
+              Read card
+            </button>
+            <button
+              type="button"
+              disabled={!pageUrl}
+              onClick={() => nfc.write(pageUrl, setOnCard)}
+              className="py-3 rounded-xl bg-[#C8F331] text-sm font-black text-[#101112] hover:bg-[#b8e321] transition-colors disabled:opacity-40 outline-none"
+            >
+              Write to card
+            </button>
+          </div>
+        )}
+
+        {onCard && (
+          <div className="mt-4 rounded-xl border border-gray-200 p-3">
+            <p className="text-[11px] font-bold text-gray-400 mb-1">
+              On the card
+            </p>
+            <p className="text-sm font-semibold text-[#101112] break-all">
+              {onCard}
+            </p>
+            <p
+              className={`text-xs font-bold mt-2 ${matches ? "text-green-600" : "text-amber-600"}`}
+            >
+              {matches
+                ? "Matches your main link"
+                : "Different from your main link"}
+            </p>
+          </div>
+        )}
+      </Panel>
+    </div>
+  );
+};
 
 /* ================================================================== */
 /*  LOGIN                                                              */
@@ -1293,7 +1486,8 @@ const Switch = ({ checked, onChange, label, disabled }) => (
   </button>
 );
 
-const Sheet = ({ title, onClose, children }) => {
+/* plain = بدون هيدر، مجرد handle صغير فوق (زي التصميم) */
+const Sheet = ({ title, onClose, plain, children }) => {
   useEffect(() => {
     const handler = (e) => e.key === "Escape" && onClose();
     window.addEventListener("keydown", handler);
@@ -1306,43 +1500,81 @@ const Sheet = ({ title, onClose, children }) => {
       dir="ltr"
     >
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className="relative w-full sm:max-w-md bg-white rounded-t-3xl sm:rounded-2xl max-h-[90vh] overflow-y-auto pb-[env(safe-area-inset-bottom)]">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-          <h3 className="font-extrabold text-[#101112]">{title}</h3>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Close"
-            className="w-8 h-8 rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 flex items-center justify-center outline-none"
-          >
-            <Icon name="close" />
-          </button>
-        </div>
+      <div className="relative w-full sm:max-w-md bg-white rounded-t-[32px] sm:rounded-3xl max-h-[92vh] overflow-y-auto pb-[env(safe-area-inset-bottom)]">
+        {plain ? (
+          <div className="flex justify-center pt-3">
+            <span className="w-12 h-1.5 rounded-full bg-gray-300" />
+          </div>
+        ) : (
+          <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+            <h3 className="font-extrabold text-[#101112]">{title}</h3>
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Close"
+              className="w-8 h-8 rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 flex items-center justify-center outline-none"
+            >
+              <Icon name="close" />
+            </button>
+          </div>
+        )}
         <div className="p-5">{children}</div>
       </div>
     </div>
   );
 };
 
-/* Add / edit one link — inputs stacked in a column.
-   NOTE: not a <form> on purpose (it lives inside the main form). */
+/* ---------- Add / edit link screen (like the design) ---------- */
+const BARE =
+  "w-full bg-transparent outline-none text-lg font-semibold text-[#101112] placeholder:text-gray-300 placeholder:font-normal";
+
+const FloatField = ({ label, children }) => (
+  <label className="block bg-gray-50 border border-gray-200 rounded-2xl px-4 pt-2.5 pb-2 focus-within:border-[#101112] focus-within:bg-white transition-all">
+    <span className="block text-[11px] text-gray-400">{label}</span>
+    {children}
+  </label>
+);
+
+const BigLogo = ({ link }) => {
+  const light = link.bg_color?.toUpperCase() === "#FFFC00";
+  return (
+    <span
+      className="w-28 h-28 rounded-full flex items-center justify-center text-5xl"
+      style={{
+        backgroundColor: link.bg_color || "#101112",
+        color: light ? "#000" : "#fff",
+      }}
+    >
+      {link.image_url ? (
+        <img src={link.image_url} alt="" className="w-14 h-14 object-contain" />
+      ) : link.icon_class ? (
+        <i className={link.icon_class}></i>
+      ) : (
+        <span className="font-black text-4xl">
+          {(link.platform_name || "?").charAt(0).toUpperCase()}
+        </span>
+      )}
+    </span>
+  );
+};
+
+/* NOTE: not a <form> on purpose (it lives inside the main form). */
 const LinkFormSheet = ({ mode, initial, onSave, onDelete, onClose }) => {
   const [link, setLink] = useState(initial);
   const [error, setError] = useState("");
   const [showStyle, setShowStyle] = useState(false);
-  const platform = findPlatform(link.platform_name);
+  // المنصة ثابتة من أول فتح الشاشة (حتى لو اليوزر عدّل اسم المنصة)
+  const [platform] = useState(() => findPlatform(initial.platform_name));
 
   const set = (field, value) =>
     setLink((prev) => {
       const next = { ...prev, [field]: value };
-      if (field === "username") {
-        const pf = findPlatform(prev.platform_name);
-        if (
-          pf?.urlTemplate &&
-          (!prev.url || prev.url === buildUrl(pf, prev.username))
-        ) {
-          next.url = buildUrl(pf, value);
-        }
+      if (
+        field === "username" &&
+        platform?.urlTemplate &&
+        (!prev.url || prev.url === buildUrl(platform, prev.username))
+      ) {
+        next.url = buildUrl(platform, value);
       }
       return next;
     });
@@ -1362,20 +1594,14 @@ const LinkFormSheet = ({ mode, initial, onSave, onDelete, onClose }) => {
   };
 
   return (
-    <Sheet title={mode === "edit" ? "Edit link" : "Add link"} onClose={onClose}>
-      <div className="space-y-4" onKeyDown={onEnter}>
-        <div className="flex items-center gap-3">
-          <PlatformBadge link={link} size="w-12 h-12" />
-          <div className="min-w-0">
-            <p className="font-extrabold text-[#101112] truncate">
-              {link.platform_name || "Custom link"}
-            </p>
-            <p className="text-xs text-gray-400">
-              {platform
-                ? "Only the username and link are needed"
-                : "Custom platform"}
-            </p>
-          </div>
+    <Sheet plain onClose={onClose}>
+      <div className="space-y-3" onKeyDown={onEnter}>
+        {/* logo + name */}
+        <div className="flex flex-col items-center text-center pt-3 pb-4">
+          <BigLogo link={link} />
+          <h3 className="mt-4 text-2xl font-black text-[#101112] truncate max-w-full">
+            {link.platform_name || "Custom link"}
+          </h3>
         </div>
 
         {error && (
@@ -1384,38 +1610,38 @@ const LinkFormSheet = ({ mode, initial, onSave, onDelete, onClose }) => {
           </div>
         )}
 
-        {!platform && (
-          <Field label="Platform name">
-            <TextInput
-              autoFocus
-              placeholder="e.g. My Store"
-              value={link.platform_name}
-              onChange={(e) => set("platform_name", e.target.value)}
-            />
-          </Field>
-        )}
-        <Field label="Username">
-          <TextInput
-            autoFocus={!!platform}
+        <FloatField label="Platform name">
+          <input
+            className={BARE}
+            placeholder="e.g. My Store"
+            value={link.platform_name}
+            onChange={(e) => set("platform_name", e.target.value)}
+          />
+        </FloatField>
+
+        <FloatField label="Username">
+          <input
+            autoFocus
+            className={BARE}
             placeholder={platform?.hint || "username"}
             value={link.username}
             onChange={(e) => set("username", e.target.value)}
           />
-        </Field>
-        <Field
-          label="Link"
-          hint={
-            platform?.urlTemplate
-              ? "Filled in automatically from the username. You can edit it."
-              : undefined
-          }
-        >
-          <TextInput
+        </FloatField>
+
+        <FloatField label="Profile link">
+          <input
+            className={BARE}
             placeholder="https://..."
             value={link.url}
             onChange={(e) => set("url", e.target.value)}
           />
-        </Field>
+        </FloatField>
+        {platform?.urlTemplate && (
+          <p className="text-[11px] text-gray-400 px-1 -mt-1">
+            Filled in automatically from the username. You can edit it.
+          </p>
+        )}
 
         <button
           type="button"
@@ -1428,35 +1654,35 @@ const LinkFormSheet = ({ mode, initial, onSave, onDelete, onClose }) => {
         </button>
 
         {showStyle && (
-          <div className="space-y-4 pt-4 border-t border-gray-100">
-            <Field label="Background color">
-              <div className="flex gap-2">
+          <div className="space-y-3 pt-3 border-t border-gray-100">
+            <FloatField label="Background color">
+              <div className="flex items-center gap-2">
                 <input
                   type="color"
                   value={link.bg_color || "#101112"}
                   onChange={(e) => set("bg_color", e.target.value)}
-                  className="w-11 h-11 p-1 rounded-lg border border-gray-200 cursor-pointer bg-gray-50"
+                  className="w-9 h-9 p-0.5 rounded-lg border border-gray-200 cursor-pointer bg-white"
                 />
-                <TextInput
-                  className="flex-1 uppercase"
+                <input
+                  className={`${BARE} uppercase`}
                   placeholder="#1877F2"
                   value={link.bg_color}
                   onChange={(e) => set("bg_color", e.target.value)}
                 />
               </div>
-            </Field>
-            <Field label="FontAwesome class">
-              <TextInput
-                className="font-mono"
+            </FloatField>
+            <FloatField label="FontAwesome class">
+              <input
+                className={`${BARE} font-mono text-base`}
                 placeholder="fa-brands fa-facebook"
                 value={link.icon_class}
                 onChange={(e) => set("icon_class", e.target.value)}
               />
-            </Field>
-            <Field label="Image / SVG">
-              <div className="flex gap-2">
-                <TextInput
-                  className="flex-1"
+            </FloatField>
+            <FloatField label="Image / SVG">
+              <div className="flex items-center gap-2">
+                <input
+                  className={`${BARE} text-base`}
                   placeholder="https://..."
                   value={link.image_url}
                   onChange={(e) => set("image_url", e.target.value)}
@@ -1467,23 +1693,23 @@ const LinkFormSheet = ({ mode, initial, onSave, onDelete, onClose }) => {
                   onFile={(b64) => set("image_url", b64)}
                 />
               </div>
-            </Field>
+            </FloatField>
           </div>
         )}
 
-        <div className="pt-2 space-y-2">
+        <div className="pt-3 space-y-2">
           <button
             type="button"
             onClick={submit}
-            className="w-full bg-[#C8F331] text-[#101112] font-black text-sm py-3.5 rounded-xl hover:bg-[#b8e321] transition-all outline-none"
+            className="w-full bg-[#101112] text-white font-bold text-base py-4 rounded-full hover:bg-gray-800 transition-all outline-none"
           >
-            {mode === "edit" ? "Save changes" : "Add link"}
+            Save link
           </button>
           {mode === "edit" && (
             <button
               type="button"
               onClick={onDelete}
-              className="w-full text-red-500 font-bold text-sm py-3 rounded-xl hover:bg-red-50 transition-colors outline-none"
+              className="w-full text-red-500 font-bold text-sm py-3 rounded-full hover:bg-red-50 transition-colors outline-none"
             >
               Delete link
             </button>
@@ -2122,6 +2348,12 @@ const TABS = [
     desc: "Turn links on or off, swipe to edit or delete, and add new ones.",
   },
   {
+    id: "nfc",
+    label: "NFC",
+    icon: "nfc",
+    desc: "Read your NFC card or write your main profile link to it.",
+  },
+  {
     id: "security",
     label: "Security",
     icon: "lock",
@@ -2158,7 +2390,7 @@ const SideNav = ({ tabs, active, onChange, linkCount }) => (
 
 const BottomNav = ({ tabs, active, onChange }) => (
   <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-white border-t border-gray-200 pb-[env(safe-area-inset-bottom)]">
-    <div className="grid grid-cols-4">
+    <div className="grid grid-cols-5">
       {tabs.map((t) => (
         <button
           key={t.id}
@@ -2323,7 +2555,7 @@ const Dashboard = () => {
     );
   }
 
-  const showSaveBar = activeTab !== "security";
+  const showSaveBar = activeTab !== "security" && activeTab !== "nfc";
   const currentTab = TABS.find((t) => t.id === activeTab);
 
   return (
@@ -2375,6 +2607,8 @@ const Dashboard = () => {
           <PageHeader title={currentTab.label} description={currentTab.desc} />
           {activeTab === "security" ? (
             <SecurityTab notify={notify} />
+          ) : activeTab === "nfc" ? (
+            <NfcTab profile={profile} notify={notify} />
           ) : (
             <form onSubmit={handleSave}>
               {activeTab === "profile" && (
